@@ -1,0 +1,21 @@
+{
+  "name": "thinodes",
+  "version": "1.0.0",
+  "description": "This is gonna be a complete HMS for THI",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "THI",
+    "javascript",
+    "backend",
+    "ejs",
+    "express",
+    "postgres",
+    "node",
+    "js"
+  ],
+  "author": "Fawad Ahmad",
+  "license": "ISC"
+}
