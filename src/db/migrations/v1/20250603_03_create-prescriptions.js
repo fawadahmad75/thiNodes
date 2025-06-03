@@ -1,11 +1,10 @@
-exports.up = function (knex) {
+export function up(knex) {
   return knex.schema.createTable("prescriptions", (table) => {
     table.increments("id").primary();
     table
-      .integer("patientId")
-      .unsigned()
+      .string("patientId", 50)
       .notNullable()
-      .references("id")
+      .references("patientId")
       .inTable("patients")
       .onDelete("CASCADE");
     table
@@ -29,8 +28,8 @@ exports.up = function (knex) {
     table.index(["doctorId", "date"], "idx_prescription_doctor_date");
     table.index(["status"], "idx_prescription_status");
   });
-};
+}
 
-exports.down = function (knex) {
+export function down(knex) {
   return knex.schema.dropTableIfExists("prescriptions");
-};
+}

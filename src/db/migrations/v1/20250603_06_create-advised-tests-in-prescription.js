@@ -1,4 +1,4 @@
-exports.up = function (knex) {
+export function up(knex) {
   return knex.schema.createTable("advised_tests_in_prescription", (table) => {
     table.increments("id").primary();
     table
@@ -18,6 +18,6 @@ exports.up = function (knex) {
   });
 };
 
-exports.down = function (knex) {
+export function down(knex) {
   return knex.schema.dropTableIfExists("advised_tests_in_prescription");
 };

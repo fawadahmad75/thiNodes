@@ -1,9 +1,16 @@
 import dotenv from "dotenv";
-dotenv.config();
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from project root .env file
+dotenv.config({ path: path.join(__dirname, "../../.env") });
 
 export default {
   development: {
-    client: process.env.DB_CLIENT,
+    client: "pg", // Hardcode instead of using process.env.DB_CLIENT
     connection: {
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
@@ -15,12 +22,9 @@ export default {
     pool: {
       min: 2, // Minimum number of connections in pool
       max: 10, // Maximum number of connections in pool
-      // Optional: custom afterCreate handler & idleTimeoutMillis, etc.
-      // afterCreate: (conn, done) => { ... }
-      // idleTimeoutMillis: 30000
     },
     migrations: { directory: "./migrations", tableName: "knex_migrations" },
-    seeds: { directory: "./seeds" },
+    seeds: { directory: path.join(__dirname, "seeds") },
   },
   production: {
     client: process.env.DB_CLIENT,
@@ -33,16 +37,10 @@ export default {
       ssl: { rejectUnauthorized: false },
     },
     pool: {
-      min: 4, // You may want a higher min in production
-      max: 20, // And a higher max for heavier loads
-      // Example advanced settings:
-      // idleTimeoutMillis: 60000, // 1 minute
-      // createTimeoutMillis: 3000,
-      // acquireTimeoutMillis: 30000,
-      // reapIntervalMillis: 1000,
-      // propagateCreateError: false
+      min: 4,
+      max: 20,
     },
     migrations: { directory: "./migrations", tableName: "knex_migrations" },
-    seeds: { directory: "./seeds" },
+    seeds: { directory: path.join(__dirname, "seeds") },
   },
 };

@@ -1,4 +1,4 @@
-exports.up = function (knex) {
+export function up(knex) {
   return knex.schema
     .createTable("print_settings", (table) => {
       table.increments("id").primary();
@@ -26,6 +26,6 @@ exports.up = function (knex) {
     });
 };
 
-exports.down = function (knex) {
+export function down(knex) {
   return knex.schema.dropTableIfExists("print_settings");
 };

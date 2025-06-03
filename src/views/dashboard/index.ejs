@@ -1,0 +1,165 @@
+<%- contentFor('body') %>
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Dashboard</h1>
+        <div class="btn-group">
+            <a href="/patients/new" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> New Patient
+            </a>
+            <a href="/prescriptions/new" class="btn btn-success">
+                <i class="fas fa-prescription"></i> New Prescription
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">Today's Patients</h6>
+                            <h2 class="mt-2 mb-0"><%= stats.todayPatients %></h2>
+                        </div>
+                        <div class="icon text-primary">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">Prescriptions</h6>
+                            <h2 class="mt-2 mb-0"><%= stats.todayPrescriptions %></h2>
+                        </div>
+                        <div class="icon text-success">
+                            <i class="fas fa-prescription"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">Test Results</h6>
+                            <h2 class="mt-2 mb-0"><%= stats.pendingTests %></h2>
+                        </div>
+                        <div class="icon text-info">
+                            <i class="fas fa-vial"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-0">Active Patients</h6>
+                            <h2 class="mt-2 mb-0"><%= stats.activePatients %></h2>
+                        </div>
+                        <div class="icon text-warning">
+                            <i class="fas fa-procedures"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <!-- Recent Patients -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Patients</h5>
+                    <a href="/patients" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Patient ID</th>
+                                    <th>Name</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% recentPatients.forEach(function(patient) { %>
+                                <tr>
+                                    <td><%= patient.patientId %></td>
+                                    <td><%= patient.firstName + ' ' + patient.lastName %></td>
+                                    <td><%= new Date(patient.createdAt).toLocaleDateString() %></td>
+                                    <td>
+                                        <a href="/patients/<%= patient.patientId %>" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Prescriptions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Prescriptions</h5>
+                    <a href="/prescriptions" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Patient</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% recentPrescriptions.forEach(function(prescription) { %>
+                                <tr>
+                                    <td><%= prescription.id %></td>
+                                    <td><%= prescription.patientName %></td>
+                                    <td><%= new Date(prescription.date).toLocaleDateString() %></td>
+                                    <td>
+                                        <span class="badge status-<%= prescription.status %>">
+                                            <%= prescription.status %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="/prescriptions/<%= prescription.id %>" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

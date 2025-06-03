@@ -1,11 +1,10 @@
-exports.up = function (knex) {
+export function up(knex) {
   return knex.schema.createTable("test_results", (table) => {
     table.increments("id").primary();
     table
-      .integer("patientId")
-      .unsigned()
+      .string("patientId", 50)
       .notNullable()
-      .references("id")
+      .references("patientId")
       .inTable("patients")
       .onDelete("CASCADE");
     table
@@ -31,8 +30,8 @@ exports.up = function (knex) {
     table.index(["patientId", "testDate"], "idx_test_results_patient");
     table.index(["advisedTestId"], "idx_test_results_advised_test");
   });
-};
+}
 
-exports.down = function (knex) {
+export function down(knex) {
   return knex.schema.dropTableIfExists("test_results");
-};
+}

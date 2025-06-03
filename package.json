@@ -6,7 +6,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "node src/db/runMigrations.js",
+    "migrate:rollback": "node src/db/rollbackMigrations.js",
+    "create-db": "node createDb.js",
+    "seed": "node src/db/runSeeds.js"
   },
   "keywords": [
     "THI",
@@ -25,9 +29,22 @@
     "prettier": "^3.5.3"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.6.0",
+    "csv-parser": "^3.2.0",
+    "csv-writer": "^1.6.0",
     "dotenv": "^16.5.0",
+    "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-ejs-layouts": "^2.5.1",
+    "express-session": "^1.18.1",
+    "jsonwebtoken": "^9.0.2",
     "knex": "^3.1.0",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.0",
+    "pdfkit": "^0.17.1",
     "pg": "^8.16.0"
   }
 }

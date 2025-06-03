@@ -1,11 +1,15 @@
-exports.up = function (knex) {
+export function up(knex) {
   return knex.schema.createTable("users", (table) => {
     table.increments("id").primary();
     table.string("username", 50).notNullable().unique().index();
     table.string("password").notNullable();
     table.string("name", 100).notNullable();
     table.string("email", 100).notNullable();
-    table.enum("role", ["doctor", "admin"]).notNullable().defaultTo("doctor");
+    table
+      .enum("role", ["doctor", "admin", "pharmacist"])
+      .notNullable()
+      .defaultTo("doctor");
+    table.specificType("departments", "text[]").defaultTo("{}"); // Array of department names
     table.string("specialization", 100);
     table.string("licenseNumber", 50);
     table.string("contactNumber", 20);
@@ -17,8 +21,8 @@ exports.up = function (knex) {
     // Add index for common queries
     table.index(["role", "name"], "idx_users_role_name");
   });
-};
+}
 
-exports.down = function (knex) {
+export function down(knex) {
   return knex.schema.dropTableIfExists("users");
-};
+}

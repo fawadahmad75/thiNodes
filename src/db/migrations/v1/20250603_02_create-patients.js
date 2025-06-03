@@ -1,7 +1,7 @@
-exports.up = function (knex) {
+export function up(knex) {
   return knex.schema.createTable("patients", (table) => {
-    table.increments("id").primary();
-    table.string("patientId", 50).notNullable().unique().index();
+    // Use patientId as primary key instead of auto-increment id
+    table.string("patientId", 50).primary();
     table.string("firstName", 100).notNullable().index(); // Added firstName
     table.string("lastName", 100).notNullable().index(); // Added lastName
     table.string("cnic", 15).unique(); // Added CNIC
@@ -21,8 +21,8 @@ exports.up = function (knex) {
       "idx_patient_search"
     );
   });
-};
+}
 
-exports.down = function (knex) {
+export function down(knex) {
   return knex.schema.dropTableIfExists("patients");
-};
+}

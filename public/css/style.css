@@ -1,0 +1,143 @@
+/* General Styles */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1 0 auto;
+  padding: 20px 0;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  height: calc(100vh - 56px);
+  border-right: 1px solid #dee2e6;
+}
+
+.sidebar .nav-link {
+  color: #333;
+  padding: 0.5rem 1rem;
+  margin: 0.2rem 0;
+  border-radius: 0.25rem;
+}
+
+.sidebar .nav-link:hover {
+  background-color: #e9ecef;
+}
+
+.sidebar .nav-link.active {
+  color: #fff;
+  background-color: #0d6efd;
+}
+
+.sidebar .nav-link i {
+  width: 20px;
+  margin-right: 10px;
+}
+
+/* Card Styles */
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Dashboard Stats */
+.stats-card {
+  transition: transform 0.2s;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+}
+
+.stats-card .icon {
+  font-size: 2rem;
+  opacity: 0.7;
+}
+
+/* Form Styles */
+.form-label {
+  font-weight: 500;
+}
+
+.required:after {
+  content: "*";
+  color: red;
+  margin-left: 4px;
+}
+
+/* Table Styles */
+.table-hover tbody tr:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+.table th {
+  font-weight: 500;
+  background-color: #f8f9fa;
+}
+
+/* Status Badges */
+.badge.status-active {
+  background-color: #198754;
+}
+
+.badge.status-completed {
+  background-color: #0dcaf0;
+}
+
+.badge.status-discontinued {
+  background-color: #dc3545;
+}
+
+/* Footer */
+.footer {
+  background-color: #f8f9fa;
+  padding: 1rem 0;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Login Page Styles */
+.auth-wrapper {
+  background: linear-gradient(135deg, #0d6efd20 0%, #0dcaf020 100%);
+}
+
+.auth-wrapper .card {
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.auth-wrapper .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.auth-wrapper .input-group-text {
+  background-color: transparent;
+  border-right: none;
+}
+
+.auth-wrapper .form-control {
+  border-left: none;
+}
+
+.auth-wrapper .form-control:focus {
+  box-shadow: none;
+  border-color: #dee2e6;
+}
+
+.auth-wrapper .input-group:focus-within {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  border-radius: 0.375rem;
+}
+
+.auth-wrapper .input-group:focus-within .input-group-text,
+.auth-wrapper .input-group:focus-within .form-control {
+  border-color: #86b7fe;
+}

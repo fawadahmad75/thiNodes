@@ -1,0 +1,308 @@
+<%- contentFor('body') %>
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Medicine Formulary</h1>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fas fa-file-import"></i> Import CSV
+            </button>
+            <a href="/formulary/export" class="btn btn-outline-success">
+                <i class="fas fa-file-export"></i> Export CSV
+            </a>
+            <a href="/formulary/new" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Medicine
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/formulary" method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="<%= query.search || '' %>" 
+                           placeholder="Medicine name or generic name">
+                </div>
+                <div class="col-md-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">All Categories</option>
+                        <% ['tablet', 'injection', 'insulin injection', 'capsule', 'solution', 
+                            'syrup', 'inhaler', 'suspension', 'soft capsule', 'drops', 
+                            'effervescent tablet', 'sachet powder', 'gel', 'nebulising solution', 
+                            'powder', 'cream', 'ointment', 'emulsion', 'rotcaps', 'device'].forEach(function(cat) { %>
+                            <option value="<%= cat %>" <%= query.category === cat ? 'selected' : '' %>>
+                                <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="sort" class="form-label">Sort By</label>
+                    <select class="form-select" id="sort" name="sort">
+                        <option value="name_asc" <%= query.sort === 'name_asc' ? 'selected' : '' %>>Name (A-Z)</option>
+                        <option value="name_desc" <%= query.sort === 'name_desc' ? 'selected' : '' %>>Name (Z-A)</option>
+                        <option value="created_desc" <%= query.sort === 'created_desc' ? 'selected' : '' %>>Newest First</option>
+                        <option value="created_asc" <%= query.sort === 'created_asc' ? 'selected' : '' %>>Oldest First</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Medicines List -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Generic Name</th>
+                            <th>Category</th>
+                            <th>Strength</th>
+                            <th>Frequency Options</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (medicines && medicines.length > 0) { %>
+                            <% medicines.forEach(function(medicine) { %>
+                                <tr>
+                                    <td><%= medicine.name %></td>
+                                    <td><%= medicine.genericName || '-' %></td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            <%= medicine.category %>
+                                        </span>
+                                    </td>
+                                    <td><%= medicine.strength %></td>
+                                    <td>
+                                        <% if (medicine.frequencyOptions) { %>
+                                            <% JSON.parse(medicine.frequencyOptions).slice(0, 3).forEach(function(freq) { %>
+                                                <span class="badge bg-secondary me-1"><%= freq %></span>
+                                            <% }); %>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-info" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#detailsModal"
+                                                    data-medicine='<%= JSON.stringify(medicine) %>'>
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                            <a href="/formulary/<%= medicine.id %>/edit" class="btn btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-danger delete-medicine" 
+                                                    data-id="<%= medicine.id %>"
+                                                    data-name="<%= medicine.name %>">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-prescription-bottle fa-2x mb-3"></i>
+                                        <p>No medicines found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <% if (totalPages > 1) { %>
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                            <a class="page-link" href="?page=<%= currentPage - 1 %>&<%= query.toString() %>">Previous</a>
+                        </li>
+                        <% for(let i = 1; i <= totalPages; i++) { %>
+                            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                                <a class="page-link" href="?page=<%= i %>&<%= query.toString() %>"><%= i %></a>
+                            </li>
+                        <% } %>
+                        <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                            <a class="page-link" href="?page=<%= currentPage + 1 %>&<%= query.toString() %>">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- Medicine Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Medicine Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Basic Information</h6>
+                        <dl>
+                            <dt>Name</dt>
+                            <dd class="medicine-name"></dd>
+                            <dt>Generic Name</dt>
+                            <dd class="medicine-generic"></dd>
+                            <dt>Category</dt>
+                            <dd class="medicine-category"></dd>
+                            <dt>Strength</dt>
+                            <dd class="medicine-strength"></dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Frequency Options</h6>
+                        <div class="medicine-frequency"></div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Dosage Guidelines</h6>
+                        <div class="medicine-dosage"></div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6>Drug Interactions</h6>
+                        <div class="medicine-interactions"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Side Effects</h6>
+                        <div class="medicine-side-effects"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import CSV Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Medicines</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/formulary/import" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">CSV File</label>
+                        <input type="file" class="form-control" id="csvFile" name="file" accept=".csv" required>
+                    </div>
+                    <div class="form-text mb-3">
+                        Download the <a href="/formulary/template">template CSV</a> to see the required format.
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload and Import
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteMedicineName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" action="/formulary/delete" method="POST" class="d-inline">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <input type="hidden" name="id" id="deleteMedicineId">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle medicine details modal
+document.querySelectorAll('[data-bs-target="#detailsModal"]').forEach(button => {
+    button.addEventListener('click', function() {
+        const medicine = JSON.parse(this.dataset.medicine);
+        const modal = document.getElementById('detailsModal');
+        
+        // Set basic info
+        modal.querySelector('.medicine-name').textContent = medicine.name;
+        modal.querySelector('.medicine-generic').textContent = medicine.genericName || '-';
+        modal.querySelector('.medicine-category').textContent = medicine.category;
+        modal.querySelector('.medicine-strength').textContent = medicine.strength;
+        
+        // Set frequency options
+        const frequencies = JSON.parse(medicine.frequencyOptions || '[]');
+        modal.querySelector('.medicine-frequency').innerHTML = frequencies.length ?
+            frequencies.map(f => `<span class="badge bg-secondary me-2">${f}</span>`).join('') :
+            '<em>No frequency options defined</em>';
+        
+        // Set guidelines
+        modal.querySelector('.medicine-dosage').innerHTML = medicine.dosageGuidelines ?
+            `<div class="alert alert-info">${medicine.dosageGuidelines}</div>` :
+            '<em>No dosage guidelines available</em>';
+        
+        // Set interactions
+        const interactions = JSON.parse(medicine.drugInteractions || '[]');
+        modal.querySelector('.medicine-interactions').innerHTML = interactions.length ?
+            `<ul class="list-unstyled mb-0">${
+                interactions.map(i => `<li><i class="fas fa-exclamation-triangle text-warning"></i> ${i}</li>`).join('')
+            }</ul>` :
+            '<em>No known drug interactions</em>';
+        
+        // Set side effects
+        const sideEffects = JSON.parse(medicine.sideEffects || '[]');
+        modal.querySelector('.medicine-side-effects').innerHTML = sideEffects.length ?
+            `<ul class="list-unstyled mb-0">${
+                sideEffects.map(s => `<li><i class="fas fa-dot-circle text-danger"></i> ${s}</li>`).join('')
+            }</ul>` :
+            '<em>No side effects listed</em>';
+    });
+});
+
+// Handle delete confirmation
+document.querySelectorAll('.delete-medicine').forEach(button => {
+    button.addEventListener('click', function() {
+        const id = this.dataset.id;
+        const name = this.dataset.name;
+        
+        document.getElementById('deleteMedicineId').value = id;
+        document.getElementById('deleteMedicineName').textContent = name;
+        
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    });
+});
+</script>

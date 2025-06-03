@@ -1,0 +1,297 @@
+<%- contentFor('body') %>
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3"><%= medicine ? 'Edit' : 'Add' %> Medicine</h1>
+        <a href="/formulary" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <% if (locals.error) { %>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> <%= error %>
+                        </div>
+                    <% } %>
+
+                    <form action="<%= medicine ? `/formulary/${medicine.id}` : '/formulary' %>" 
+                          method="POST" 
+                          id="medicineForm"
+                          class="row g-3">
+                        
+                        <% if (medicine) { %>
+                            <input type="hidden" name="_method" value="PUT">
+                        <% } %>
+
+                        <div class="col-md-6">
+                            <label for="name" class="form-label required">Medicine Name</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="name" 
+                                   name="name" 
+                                   required
+                                   value="<%= medicine ? medicine.name : '' %>">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="genericName" class="form-label">Generic Name</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="genericName" 
+                                   name="genericName"
+                                   value="<%= medicine ? medicine.genericName : '' %>">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="category" class="form-label required">Category</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                <% ['tablet', 'injection', 'insulin injection', 'capsule', 'solution', 
+                                    'syrup', 'inhaler', 'suspension', 'soft capsule', 'drops', 
+                                    'effervescent tablet', 'sachet powder', 'gel', 'nebulising solution', 
+                                    'powder', 'cream', 'ointment', 'emulsion', 'rotcaps', 'device'].forEach(function(cat) { %>
+                                    <option value="<%= cat %>" 
+                                            <%= medicine && medicine.category === cat ? 'selected' : '' %>>
+                                        <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="strength" class="form-label required">Strength</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="strength" 
+                                   name="strength" 
+                                   required
+                                   placeholder="e.g., 500mg, 10ml, etc."
+                                   value="<%= medicine ? medicine.strength : '' %>">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Frequency Options</label>
+                            <div class="frequency-options">
+                                <% const frequencies = medicine ? JSON.parse(medicine.frequencyOptions || '[]') : []; %>
+                                <% frequencies.forEach(function(freq, index) { %>
+                                    <div class="input-group mb-2">
+                                        <input type="text" 
+                                               class="form-control" 
+                                               name="frequencyOptions[]"
+                                               value="<%= freq %>">
+                                        <button type="button" class="btn btn-outline-danger remove-frequency">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                <% }); %>
+                                <div class="input-group mb-2">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="frequencyOptions[]"
+                                           placeholder="e.g., Once daily, Twice daily, etc.">
+                                    <button type="button" class="btn btn-outline-danger remove-frequency">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="addFrequency">
+                                <i class="fas fa-plus"></i> Add Frequency Option
+                            </button>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="dosageGuidelines" class="form-label">Dosage Guidelines</label>
+                            <textarea class="form-control" 
+                                      id="dosageGuidelines" 
+                                      name="dosageGuidelines" 
+                                      rows="3"
+                                      placeholder="Enter detailed dosage instructions..."><%= medicine ? medicine.dosageGuidelines : '' %></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Drug Interactions</label>
+                            <div class="drug-interactions">
+                                <% const interactions = medicine ? JSON.parse(medicine.drugInteractions || '[]') : []; %>
+                                <% interactions.forEach(function(interaction, index) { %>
+                                    <div class="input-group mb-2">
+                                        <input type="text" 
+                                               class="form-control" 
+                                               name="drugInteractions[]"
+                                               value="<%= interaction %>">
+                                        <button type="button" class="btn btn-outline-danger remove-interaction">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                <% }); %>
+                                <div class="input-group mb-2">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="drugInteractions[]"
+                                           placeholder="Enter a drug interaction...">
+                                    <button type="button" class="btn btn-outline-danger remove-interaction">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="addInteraction">
+                                <i class="fas fa-plus"></i> Add Drug Interaction
+                            </button>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Side Effects</label>
+                            <div class="side-effects">
+                                <% const sideEffects = medicine ? JSON.parse(medicine.sideEffects || '[]') : []; %>
+                                <% sideEffects.forEach(function(effect, index) { %>
+                                    <div class="input-group mb-2">
+                                        <input type="text" 
+                                               class="form-control" 
+                                               name="sideEffects[]"
+                                               value="<%= effect %>">
+                                        <button type="button" class="btn btn-outline-danger remove-side-effect">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                <% }); %>
+                                <div class="input-group mb-2">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="sideEffects[]"
+                                           placeholder="Enter a side effect...">
+                                    <button type="button" class="btn btn-outline-danger remove-side-effect">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="addSideEffect">
+                                <i class="fas fa-plus"></i> Add Side Effect
+                            </button>
+                        </div>
+
+                        <div class="col-12">
+                            <hr>
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="reset" class="btn btn-light">
+                                    <i class="fas fa-undo"></i> Reset
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> <%= medicine ? 'Update' : 'Save' %> Medicine
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Guidelines</h5>
+                    <hr>
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle"></i> Tips for Adding Medicines</h6>
+                        <ul class="mb-0">
+                            <li>Be precise with medicine names and strengths</li>
+                            <li>Include common dosage frequencies</li>
+                            <li>List important drug interactions</li>
+                            <li>Document common side effects</li>
+                            <li>Provide clear dosage guidelines</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Required fields are marked with *</li>
+                            <li>Use official generic names</li>
+                            <li>Keep information up to date</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle dynamic frequency options
+document.getElementById('addFrequency').addEventListener('click', function() {
+    const container = document.querySelector('.frequency-options');
+    const newInput = container.children[0].cloneNode(true);
+    newInput.querySelector('input').value = '';
+    container.appendChild(newInput);
+});
+
+document.querySelector('.frequency-options').addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-frequency') || 
+        e.target.parentElement.classList.contains('remove-frequency')) {
+        const button = e.target.closest('.remove-frequency');
+        const inputGroup = button.closest('.input-group');
+        if (document.querySelectorAll('.frequency-options .input-group').length > 1) {
+            inputGroup.remove();
+        } else {
+            inputGroup.querySelector('input').value = '';
+        }
+    }
+});
+
+// Handle dynamic drug interactions
+document.getElementById('addInteraction').addEventListener('click', function() {
+    const container = document.querySelector('.drug-interactions');
+    const newInput = container.children[0].cloneNode(true);
+    newInput.querySelector('input').value = '';
+    container.appendChild(newInput);
+});
+
+document.querySelector('.drug-interactions').addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-interaction') || 
+        e.target.parentElement.classList.contains('remove-interaction')) {
+        const button = e.target.closest('.remove-interaction');
+        const inputGroup = button.closest('.input-group');
+        if (document.querySelectorAll('.drug-interactions .input-group').length > 1) {
+            inputGroup.remove();
+        } else {
+            inputGroup.querySelector('input').value = '';
+        }
+    }
+});
+
+// Handle dynamic side effects
+document.getElementById('addSideEffect').addEventListener('click', function() {
+    const container = document.querySelector('.side-effects');
+    const newInput = container.children[0].cloneNode(true);
+    newInput.querySelector('input').value = '';
+    container.appendChild(newInput);
+});
+
+document.querySelector('.side-effects').addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-side-effect') || 
+        e.target.parentElement.classList.contains('remove-side-effect')) {
+        const button = e.target.closest('.remove-side-effect');
+        const inputGroup = button.closest('.input-group');
+        if (document.querySelectorAll('.side-effects .input-group').length > 1) {
+            inputGroup.remove();
+        } else {
+            inputGroup.querySelector('input').value = '';
+        }
+    }
+});
+
+// Form validation
+document.getElementById('medicineForm').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const category = document.getElementById('category').value;
+    const strength = document.getElementById('strength').value.trim();
+
+    if (!name || !category || !strength) {
+        e.preventDefault();
+        alert('Please fill in all required fields.');
+    }
+});
+</script>

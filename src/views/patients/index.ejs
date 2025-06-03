@@ -1,0 +1,126 @@
+<%- contentFor('body') %>
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Patients</h1>
+        <a href="/patients/new" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> New Patient
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/patients" method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="<%= query.search || '' %>" 
+                           placeholder="Name, CNIC, or Contact">
+                </div>
+                <div class="col-md-2">
+                    <label for="patientId" class="form-label">Patient ID</label>
+                    <input type="text" class="form-control" id="patientId" name="patientId" 
+                           value="<%= query.patientId || '' %>"
+                           placeholder="Oracle ID">
+                </div>
+                <div class="col-md-2">
+                    <label for="dateFrom" class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="dateFrom" name="dateFrom" 
+                           value="<%= query.dateFrom || '' %>">
+                </div>
+                <div class="col-md-2">
+                    <label for="dateTo" class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="dateTo" name="dateTo" 
+                           value="<%= query.dateTo || '' %>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Patients List -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient ID</th>
+                            <th>Name</th>
+                            <th>CNIC</th>
+                            <th>Gender</th>
+                            <th>Contact</th>
+                            <th>Registration Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (patients && patients.length > 0) { %>
+                            <% patients.forEach(function(patient) { %>
+                                <tr>
+                                    <td><%= patient.patientId %></td>
+                                    <td><%= patient.firstName + ' ' + patient.lastName %></td>
+                                    <td><%= patient.cnic || '-' %></td>
+                                    <td><%= patient.gender %></td>
+                                    <td><%= patient.contact || '-' %></td>
+                                    <td><%= new Date(patient.createdAt).toLocaleDateString() %></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="/patients/<%= patient.patientId %>" class="btn btn-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="/patients/<%= patient.patientId %>/edit" class="btn btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="/prescriptions/new?patientId=<%= patient.patientId %>" 
+                                               class="btn btn-success" title="New Prescription">
+                                                <i class="fas fa-prescription"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-user-slash fa-2x mb-3"></i>
+                                        <p>No patients found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <% if (totalPages > 1) { %>
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                            <a class="page-link" href="?page=<%= currentPage - 1 %>&<%= query.toString() %>">Previous</a>
+                        </li>
+                        <% for(let i = 1; i <= totalPages; i++) { %>
+                            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                                <a class="page-link" href="?page=<%= i %>&<%= query.toString() %>"><%= i %></a>
+                            </li>
+                        <% } %>
+                        <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                            <a class="page-link" href="?page=<%= currentPage + 1 %>&<%= query.toString() %>">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            <% } %>
+        </div>
+    </div>
+</div>
