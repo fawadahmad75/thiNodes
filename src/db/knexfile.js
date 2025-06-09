@@ -23,7 +23,7 @@ export default {
       min: 2, // Minimum number of connections in pool
       max: 10, // Maximum number of connections in pool
     },
-    migrations: { directory: "./migrations", tableName: "knex_migrations" },
+    migrations: { directory: "./migrations/v1", tableName: "knex_migrations" },
     seeds: { directory: path.join(__dirname, "seeds") },
   },
   production: {

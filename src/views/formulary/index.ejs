@@ -1,7 +1,6 @@
 <%- contentFor('body') %>
 
-<div class="container-fluid">
-    <!-- Page Header -->
+<div class="container-fluid">    <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Medicine Formulary</h1>
         <div class="btn-group">
@@ -16,6 +15,19 @@
             </a>
         </div>
     </div>
+      <% if (locals.successMessage) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i> <%= successMessage %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <% } %>
+
+    <% if (locals.errorMessage) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i> <%= errorMessage %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <% } %>
 
     <!-- Search Form -->
     <div class="card mb-4">
@@ -77,8 +89,23 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <% if (medicines && medicines.length > 0) { %>
+                    <tbody>                        <% 
+// Helper function to safely handle arrays
+function safeArrayDisplay(arr, defaultValue = []) {
+    if (Array.isArray(arr)) {
+        return arr;
+    }
+    // Fallback for any legacy JSON strings
+    try {
+        const parsed = JSON.parse(arr);
+        return Array.isArray(parsed) ? parsed : defaultValue;
+    } catch (e) {
+        return defaultValue;
+    }
+}
+%>
+
+<% if (medicines && medicines.length > 0) { %>
                             <% medicines.forEach(function(medicine) { %>
                                 <tr>
                                     <td><%= medicine.name %></td>
@@ -88,20 +115,18 @@
                                             <%= medicine.category %>
                                         </span>
                                     </td>
-                                    <td><%= medicine.strength %></td>
-                                    <td>
+                                    <td><%= medicine.strength %></td>                                    <td>
                                         <% if (medicine.frequencyOptions) { %>
-                                            <% JSON.parse(medicine.frequencyOptions).slice(0, 3).forEach(function(freq) { %>
+                                            <% safeArrayDisplay(medicine.frequencyOptions).slice(0, 3).forEach(function(freq) { %>
                                                 <span class="badge bg-secondary me-1"><%= freq %></span>
                                             <% }); %>
                                         <% } %>
                                     </td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-info" 
+                                        <div class="btn-group btn-group-sm">                                            <button class="btn btn-info" 
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#detailsModal"
-                                                    data-medicine='<%= JSON.stringify(medicine) %>'>
+                                                    data-medicine="<%= encodeURIComponent(JSON.stringify(medicine)) %>">
                                                 <i class="fas fa-info-circle"></i>
                                             </button>
                                             <a href="/formulary/<%= medicine.id %>/edit" class="btn btn-warning">
@@ -137,9 +162,35 @@
                         <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
                             <a class="page-link" href="?page=<%= currentPage - 1 %>&<%= query.toString() %>">Previous</a>
                         </li>
-                        <% for(let i = 1; i <= totalPages; i++) { %>
+                        <% 
+                        // Windowed pagination logic
+                        const pageWindow = 2; // pages before/after current
+                        let startPage = Math.max(2, currentPage - pageWindow);
+                        let endPage = Math.min(totalPages - 1, currentPage + pageWindow);
+                        if (currentPage <= 1 + pageWindow) {
+                            endPage = Math.min(totalPages - 1, 1 + 2 * pageWindow);
+                        }
+                        if (currentPage >= totalPages - pageWindow) {
+                            startPage = Math.max(2, totalPages - 2 * pageWindow);
+                        }
+                        %>
+                        <li class="page-item <%= currentPage === 1 ? 'active' : '' %>">
+                            <a class="page-link" href="?page=1&<%= query.toString() %>">1</a>
+                        </li>
+                        <% if (startPage > 2) { %>
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        <% } %>
+                        <% for(let i = startPage; i <= endPage; i++) { %>
                             <li class="page-item <%= currentPage === i ? 'active' : '' %>">
                                 <a class="page-link" href="?page=<%= i %>&<%= query.toString() %>"><%= i %></a>
+                            </li>
+                        <% } %>
+                        <% if (endPage < totalPages - 1) { %>
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        <% } %>
+                        <% if (totalPages > 1) { %>
+                            <li class="page-item <%= currentPage === totalPages ? 'active' : '' %>">
+                                <a class="page-link" href="?page=<%= totalPages %>&<%= query.toString() %>"><%= totalPages %></a>
                             </li>
                         <% } %>
                         <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
@@ -252,20 +303,40 @@
 </div>
 
 <script>
+// Function to safely handle arrays in JavaScript
+function safeArrayDisplayJS(arr, defaultValue = []) {
+    if (Array.isArray(arr)) {
+        return arr;
+    }
+    // Fallback for any legacy JSON strings
+    try {
+        const parsed = JSON.parse(arr);
+        return Array.isArray(parsed) ? parsed : defaultValue;
+    } catch (e) {
+        return defaultValue;
+    }
+}
+
 // Handle medicine details modal
 document.querySelectorAll('[data-bs-target="#detailsModal"]').forEach(button => {
     button.addEventListener('click', function() {
-        const medicine = JSON.parse(this.dataset.medicine);
+        // Try to safely parse the medicine data
+        let medicine = {};
+        try {
+            medicine = JSON.parse(decodeURIComponent(this.dataset.medicine));
+        } catch (e) {
+            console.error('Error parsing medicine data:', e);
+            medicine = {};
+        }
         const modal = document.getElementById('detailsModal');
         
         // Set basic info
-        modal.querySelector('.medicine-name').textContent = medicine.name;
+        modal.querySelector('.medicine-name').textContent = medicine.name || '';
         modal.querySelector('.medicine-generic').textContent = medicine.genericName || '-';
-        modal.querySelector('.medicine-category').textContent = medicine.category;
-        modal.querySelector('.medicine-strength').textContent = medicine.strength;
-        
-        // Set frequency options
-        const frequencies = JSON.parse(medicine.frequencyOptions || '[]');
+        modal.querySelector('.medicine-category').textContent = medicine.category || '';
+        modal.querySelector('.medicine-strength').textContent = medicine.strength || '';
+          // Set frequency options
+        const frequencies = safeArrayDisplayJS(medicine.frequencyOptions, []);
         modal.querySelector('.medicine-frequency').innerHTML = frequencies.length ?
             frequencies.map(f => `<span class="badge bg-secondary me-2">${f}</span>`).join('') :
             '<em>No frequency options defined</em>';
@@ -276,7 +347,7 @@ document.querySelectorAll('[data-bs-target="#detailsModal"]').forEach(button => 
             '<em>No dosage guidelines available</em>';
         
         // Set interactions
-        const interactions = JSON.parse(medicine.drugInteractions || '[]');
+        const interactions = safeArrayDisplayJS(medicine.drugInteractions, []);
         modal.querySelector('.medicine-interactions').innerHTML = interactions.length ?
             `<ul class="list-unstyled mb-0">${
                 interactions.map(i => `<li><i class="fas fa-exclamation-triangle text-warning"></i> ${i}</li>`).join('')
@@ -284,7 +355,7 @@ document.querySelectorAll('[data-bs-target="#detailsModal"]').forEach(button => 
             '<em>No known drug interactions</em>';
         
         // Set side effects
-        const sideEffects = JSON.parse(medicine.sideEffects || '[]');
+        const sideEffects = safeArrayDisplayJS(medicine.sideEffects, []);
         modal.querySelector('.medicine-side-effects').innerHTML = sideEffects.length ?
             `<ul class="list-unstyled mb-0">${
                 sideEffects.map(s => `<li><i class="fas fa-dot-circle text-danger"></i> ${s}</li>`).join('')
@@ -305,4 +376,45 @@ document.querySelectorAll('.delete-medicine').forEach(button => {
         new bootstrap.Modal(document.getElementById('deleteModal')).show();
     });
 });
+
+// Handle delete confirmation
+// Replace form submit with AJAX for delete
+const deleteForm = document.getElementById('deleteForm');
+if (deleteForm) {
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('deleteMedicineId').value;
+        fetch('/formulary/delete', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the row from the table
+                const row = document.querySelector(`button.delete-medicine[data-id="${id}"]`).closest('tr');
+                if (row) row.remove();
+                // Hide modal
+                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                // Optionally show a toast or alert
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alert.role = 'alert';
+                alert.innerHTML = '<i class="fas fa-check-circle me-2"></i> Medicine deleted successfully.' +
+                  '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                document.querySelector('.container-fluid').prepend(alert);
+            } else {
+                alert('Failed to delete: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            alert('Failed to delete: ' + err.message);
+        });
+    });
+}
 </script>

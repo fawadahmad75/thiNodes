@@ -17,9 +17,7 @@
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-circle"></i> <%= error %>
                         </div>
-                    <% } %>
-
-                    <form action="<%= medicine ? `/formulary/${medicine.id}` : '/formulary' %>" 
+                    <% } %>                    <form action="<%= medicine ? `/formulary/${parseInt(medicine.id, 10)}` : '/formulary' %>" 
                           method="POST" 
                           id="medicineForm"
                           class="row g-3">
@@ -74,10 +72,25 @@
                                    value="<%= medicine ? medicine.strength : '' %>">
                         </div>
 
-                        <div class="col-12">
-                            <label class="form-label">Frequency Options</label>
+                        <div class="col-12">                            <label class="form-label">Frequency Options</label>
                             <div class="frequency-options">
-                                <% const frequencies = medicine ? JSON.parse(medicine.frequencyOptions || '[]') : []; %>
+                                <%                                // Helper function to safely handle arrays or legacy JSON
+                                function safeArrayHandle(arr, defaultValue = []) {
+                                    if (Array.isArray(arr)) {
+                                        return arr;
+                                    }
+                                    // Fallback for legacy JSON strings
+                                    try {
+                                        const parsed = JSON.parse(arr);
+                                        return Array.isArray(parsed) ? parsed : defaultValue;
+                                    } catch (e) {
+                                        // If parsing fails, return the string in an array
+                                        return typeof arr === 'string' ? [arr] : defaultValue;
+                                    }
+                                }
+                                
+                                const frequencies = medicine ? safeArrayHandle(medicine.frequencyOptions, []) : [];
+                                %>
                                 <% frequencies.forEach(function(freq, index) { %>
                                     <div class="input-group mb-2">
                                         <input type="text" 
@@ -113,10 +126,9 @@
                                       placeholder="Enter detailed dosage instructions..."><%= medicine ? medicine.dosageGuidelines : '' %></textarea>
                         </div>
 
-                        <div class="col-12">
-                            <label class="form-label">Drug Interactions</label>
+                        <div class="col-12">                            <label class="form-label">Drug Interactions</label>
                             <div class="drug-interactions">
-                                <% const interactions = medicine ? JSON.parse(medicine.drugInteractions || '[]') : []; %>
+                                <% const interactions = medicine ? safeArrayHandle(medicine.drugInteractions, []) : []; %>
                                 <% interactions.forEach(function(interaction, index) { %>
                                     <div class="input-group mb-2">
                                         <input type="text" 
@@ -143,10 +155,9 @@
                             </button>
                         </div>
 
-                        <div class="col-12">
-                            <label class="form-label">Side Effects</label>
+                        <div class="col-12">                            <label class="form-label">Side Effects</label>
                             <div class="side-effects">
-                                <% const sideEffects = medicine ? JSON.parse(medicine.sideEffects || '[]') : []; %>
+                                <% const sideEffects = medicine ? safeArrayHandle(medicine.sideEffects, []) : []; %>
                                 <% sideEffects.forEach(function(effect, index) { %>
                                     <div class="input-group mb-2">
                                         <input type="text" 

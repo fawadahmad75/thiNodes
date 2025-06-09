@@ -3,7 +3,7 @@ import db from "../db/index.js";
 // Formulary model
 class Formulary {
   // Class fields for validation
-  static get jsonFields() {
+  static get arrayFields() {
     return ["frequencyOptions", "drugInteractions", "sideEffects"];
   }
 
@@ -55,9 +55,13 @@ class Formulary {
     // Apply category filter
     if (category) {
       query = query.where("category", category);
-    }
+    } // Create a clone for counting before applying sorting
+    const countQuery = query.clone();
 
-    // Apply sorting
+    // Get total count for pagination (without sort)
+    const total = await countQuery.count("* as count").first();
+
+    // Apply sorting to the main query
     switch (sort) {
       case "name_desc":
         query = query.orderBy("name", "desc");
@@ -72,14 +76,9 @@ class Formulary {
         query = query.orderBy("name", "asc");
     }
 
-    // Get total count for pagination
-    const total = await query.clone().count().first();
-
     // Apply pagination
     const offset = (page - 1) * limit;
-    query = query.limit(limit).offset(offset);
-
-    // Get paginated data
+    query = query.limit(limit).offset(offset); // Get paginated data
     const data = await query;
 
     return {
@@ -87,53 +86,117 @@ class Formulary {
       total: parseInt(total?.count || "0"),
     };
   }
-
   // Find medicine by ID
   static async findById(id) {
-    return db("formulary").where({ id }).first();
-  }
-
-  // Create new medicine
-  static async create(medicineData) {
-    // Parse JSON fields
-    for (const field of this.jsonFields) {
-      if (medicineData[field]) {
-        medicineData[field] = JSON.stringify(
-          Array.isArray(medicineData[field])
-            ? medicineData[field]
-            : medicineData[field].split(",").map((item) => item.trim())
-        );
+    // Convert id to integer if it's a string or JSON
+    let medicineId = id;
+    if (typeof id === "string") {
+      try {
+        // Check if id is a JSON string
+        if (id.startsWith("{") && id.endsWith("}")) {
+          const parsed = JSON.parse(id);
+          medicineId = parsed.id || id;
+        }
+        // Ensure the ID is converted to a number
+        medicineId = parseInt(medicineId, 10);
+      } catch (error) {
+        console.error("Error parsing medicine ID:", error);
+        // If parsing fails, try using the original id
+        medicineId = parseInt(id, 10);
       }
     }
-
+    return db("formulary").where({ id: medicineId }).first();
+  } // Create new medicine
+  static async create(medicineData) {
+    // Process array fields
+    for (const field of this.arrayFields) {
+      // Handle arrays that come from form with name like fieldName[]
+      if (field + "[]" in medicineData) {
+        let values = medicineData[field + "[]"];
+        if (!Array.isArray(values)) values = [values];
+        medicineData[field] = values.filter(Boolean);
+        delete medicineData[field + "[]"];
+      } else if (medicineData[field]) {
+        let values = medicineData[field];
+        if (typeof values === "string") {
+          // Try to parse as JSON array, fallback to splitting or wrapping
+          let arr;
+          try {
+            arr = JSON.parse(values);
+            if (!Array.isArray(arr)) arr = [values.trim()];
+          } catch {
+            if (values.includes(",")) {
+              arr = values
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean);
+            } else {
+              arr = [values.trim()];
+            }
+          }
+          medicineData[field] = arr;
+        } else if (Array.isArray(values)) {
+          medicineData[field] = values.filter(Boolean);
+        }
+      } else {
+        medicineData[field] = [];
+      }
+    }
     // Set timestamps
     medicineData.createdAt = medicineData.updatedAt = db.fn.now();
-
     const [id] = await db("formulary").insert(medicineData).returning("id");
-    return this.findById(id);
+    return { id };
   }
-
   // Update medicine
   static async update(id, medicineData) {
-    // Parse JSON fields
-    for (const field of this.jsonFields) {
-      if (medicineData[field]) {
-        medicineData[field] = JSON.stringify(
-          Array.isArray(medicineData[field])
-            ? medicineData[field]
-            : medicineData[field].split(",").map((item) => item.trim())
-        );
+    const medicineId = typeof id === "string" ? parseInt(id, 10) : id;
+    if (isNaN(medicineId)) {
+      throw new Error("Invalid medicine ID format");
+    }
+    for (const field of this.arrayFields) {
+      if (field + "[]" in medicineData) {
+        let values = medicineData[field + "[]"];
+        if (!Array.isArray(values)) values = [values];
+        medicineData[field] = values.filter(Boolean);
+        delete medicineData[field + "[]"];
+      } else if (medicineData[field]) {
+        let values = medicineData[field];
+        if (typeof values === "string") {
+          let arr;
+          try {
+            arr = JSON.parse(values);
+            if (!Array.isArray(arr)) arr = [values.trim()];
+          } catch {
+            if (values.includes(",")) {
+              arr = values
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean);
+            } else {
+              arr = [values.trim()];
+            }
+          }
+          medicineData[field] = arr;
+        } else if (Array.isArray(values)) {
+          medicineData[field] = values.filter(Boolean);
+        }
+      } else {
+        medicineData[field] = [];
       }
     }
-
     medicineData.updatedAt = db.fn.now();
-    await db("formulary").where({ id }).update(medicineData);
-    return this.findById(id);
+    await db("formulary").where({ id: medicineId }).update(medicineData);
+    return { id: medicineId };
   }
-
   // Delete medicine
   static async delete(id) {
-    return db("formulary").where({ id }).del();
+    // Ensure id is a number
+    const medicineId = typeof id === "string" ? parseInt(id, 10) : id;
+    if (isNaN(medicineId)) {
+      throw new Error("Invalid medicine ID format");
+    }
+
+    return db("formulary").where({ id: medicineId }).del();
   }
 
   // Import medicines from CSV data
@@ -150,18 +213,14 @@ class Formulary {
           category: row.category,
           strength: row.strength,
           frequencyOptions: row.frequencyOptions
-            ? JSON.stringify(
-                row.frequencyOptions.split(",").map((f) => f.trim())
-              )
-            : "[]",
+            ? row.frequencyOptions.split(",").map((f) => f.trim())
+            : [],
           drugInteractions: row.drugInteractions
-            ? JSON.stringify(
-                row.drugInteractions.split(",").map((d) => d.trim())
-              )
-            : "[]",
+            ? row.drugInteractions.split(",").map((d) => d.trim())
+            : [],
           sideEffects: row.sideEffects
-            ? JSON.stringify(row.sideEffects.split(",").map((s) => s.trim()))
-            : "[]",
+            ? row.sideEffects.split(",").map((s) => s.trim())
+            : [],
           dosageGuidelines: row.dosageGuidelines || null,
         };
 
@@ -182,19 +241,20 @@ class Formulary {
   // Export medicines to CSV format
   static async exportToCsv() {
     const medicines = await db("formulary");
-
     return medicines.map((medicine) => ({
       name: medicine.name,
       genericName: medicine.genericName || "",
       category: medicine.category,
       strength: medicine.strength,
-      frequencyOptions: JSON.parse(medicine.frequencyOptions || "[]").join(
-        ", "
-      ),
-      drugInteractions: JSON.parse(medicine.drugInteractions || "[]").join(
-        ", "
-      ),
-      sideEffects: JSON.parse(medicine.sideEffects || "[]").join(", "),
+      frequencyOptions: Array.isArray(medicine.frequencyOptions)
+        ? medicine.frequencyOptions.join(", ")
+        : "",
+      drugInteractions: Array.isArray(medicine.drugInteractions)
+        ? medicine.drugInteractions.join(", ")
+        : "",
+      sideEffects: Array.isArray(medicine.sideEffects)
+        ? medicine.sideEffects.join(", ")
+        : "",
       dosageGuidelines: medicine.dosageGuidelines || "",
     }));
   }
