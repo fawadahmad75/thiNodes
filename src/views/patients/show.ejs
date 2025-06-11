@@ -1,0 +1,28 @@
+<div class="container mt-4">
+    <h1>Patient Details</h1>
+    <% if (patient) { %>
+        <dl class="row">
+            <dt class="col-sm-3">Patient ID</dt>
+            <dd class="col-sm-9"><%= patient.patientId %></dd>
+            <dt class="col-sm-3">Name</dt>
+            <dd class="col-sm-9"><%= patient.firstName %> <%= patient.lastName %></dd>
+            <dt class="col-sm-3">CNIC</dt>
+            <dd class="col-sm-9"><%= patient.cnic || '-' %></dd>
+            <dt class="col-sm-3">Date of Birth</dt>
+            <dd class="col-sm-9"><%= patient.dateOfBirth || '-' %></dd>
+            <dt class="col-sm-3">Gender</dt>
+            <dd class="col-sm-9"><%= patient.gender || '-' %></dd>
+            <dt class="col-sm-3">Contact</dt>
+            <dd class="col-sm-9"><%= patient.contact || '-' %></dd>
+            <dt class="col-sm-3">Guardian Name</dt>
+            <dd class="col-sm-9"><%= patient.guardianName || '-' %></dd>
+            <dt class="col-sm-3">Address</dt>
+            <dd class="col-sm-9"><%= patient.address || '-' %></dd>
+        </dl>
+        <a href="/patients" class="btn btn-secondary">Back to Patients</a>
+        <a href="/patients/<%= patient.id %>/edit" class="btn btn-primary">Edit Patient</a>
+    <% } else { %>
+        <div class="alert alert-danger">Patient not found.</div>
+        <a href="/patients" class="btn btn-secondary">Back to Patients</a>
+    <% } %>
+</div>

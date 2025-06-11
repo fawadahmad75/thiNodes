@@ -50,9 +50,10 @@ class PatientViewController {
   }
 
   async new(req, res) {
-    res.render("patients/new", {
+    res.render("patients/form", {
       title: "New Patient",
       user: req.session.user,
+      patient: null,
     });
   }
 
@@ -63,7 +64,7 @@ class PatientViewController {
         return res.redirect("/patients");
       }
 
-      res.render("patients/edit", {
+      res.render("patients/form", {
         title: "Edit Patient",
         patient,
         user: req.session.user,
@@ -89,6 +90,45 @@ class PatientViewController {
     } catch (error) {
       console.error("Error fetching patient:", error);
       next(error);
+    }
+  }
+
+  async create(req, res, next) {
+    try {
+      // Extract patient data from form
+      const patientData = req.body;
+      // Save patient using the Patient model
+      await Patient.create(patientData);
+      // Redirect to patients list with success message
+      res.redirect("/patients");
+    } catch (error) {
+      console.error("Error creating patient:", error);
+      // Optionally, re-render the form with error message and previous input
+      res.render("patients/form", {
+        title: "New Patient",
+        user: req.session.user,
+        error: error.message,
+        patient: req.body,
+      });
+    }
+  }
+
+  async update(req, res, next) {
+    try {
+      const id = req.params.id;
+      const patientData = { ...req.body };
+      delete patientData._method; // Remove _method before DB update
+      await Patient.update(id, patientData);
+      res.redirect("/patients/" + id);
+    } catch (error) {
+      console.error("Error updating patient:", error);
+      // Re-render the form with error and previous input
+      res.render("patients/form", {
+        title: "Edit Patient",
+        user: req.session.user,
+        error: error.message,
+        patient: { ...req.body, id: req.params.id },
+      });
     }
   }
 }
