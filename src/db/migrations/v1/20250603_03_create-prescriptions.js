@@ -14,6 +14,7 @@ export function up(knex) {
       .references("id")
       .inTable("users");
     table.timestamp("date").notNullable().defaultTo(knex.fn.now());
+    table.text("diagnosis").notNullable();
     table.text("clinicalNotes");
     table.text("additionalInstructions");
     table

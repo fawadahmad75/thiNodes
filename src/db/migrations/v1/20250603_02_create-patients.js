@@ -8,10 +8,12 @@ export function up(knex) {
     table.string("guardianName", 100).index(); // Added guardianName
     table.date("dateOfBirth"); // Replacing age with dateOfBirth
     table.enum("gender", ["male", "female", "other"]);
+    table
+      .enum("bloodGroup", ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
+      .nullable();
     table.string("contact", 20);
     table.string("address", 255);
-    table.text("medicalHistory");
-    table.text("allergies");
+    table.specificType("allergies", "text[]").defaultTo("{}"); // Array of allergies
     table.timestamp("createdAt").notNullable().defaultTo(knex.fn.now());
     table.timestamp("updatedAt").notNullable().defaultTo(knex.fn.now());
 

@@ -21,7 +21,7 @@ export function up(knex) {
       .onDelete("SET NULL");
     table.string("testName", 100).notNullable();
     table.timestamp("testDate").notNullable().defaultTo(knex.fn.now());
-    table.text("resultNotes");
+    table.json("resultNotes");
     table.string("fileUrl", 255);
     table.timestamp("createdAt").notNullable().defaultTo(knex.fn.now());
     table.timestamp("updatedAt").notNullable().defaultTo(knex.fn.now());

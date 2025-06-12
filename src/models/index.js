@@ -7,6 +7,7 @@ import AdvisedTest from "./AdvisedTest.js";
 import TestResult from "./TestResult.js";
 import PrintSettings from "./PrintSettings.js";
 import HospitalSettings from "./HospitalSettings.js";
+import Department from "./Department.js";
 
 export {
   User,
@@ -18,4 +19,5 @@ export {
   TestResult,
   PrintSettings,
   HospitalSettings,
+  Department,
 };

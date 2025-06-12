@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 
-export async function seed(knex) {
+export const seed = async function (knex) {
   // First, delete existing entries to avoid duplicates
   await knex("users").del();
 
@@ -17,7 +17,7 @@ export async function seed(knex) {
       name: "System Administrator",
       email: "admin@thi.com",
       role: "admin",
-      departments: ["administration"],
+      departments: [1], // Administration department ID
       specialization: null,
       licenseNumber: null,
       contactNumber: "0300-0000000",
@@ -30,7 +30,7 @@ export async function seed(knex) {
       name: "Dr. John Doe",
       email: "doctor@thi.com",
       role: "doctor",
-      departments: ["cardiology"],
+      departments: [2], // Cardiology department ID
       specialization: "Cardiologist",
       licenseNumber: "PMC-123456",
       contactNumber: "0300-1111111",
@@ -38,4 +38,4 @@ export async function seed(knex) {
       updatedAt: new Date(),
     },
   ]);
-}
+};

@@ -9,7 +9,7 @@ export function up(knex) {
       .enum("role", ["doctor", "admin", "pharmacist"])
       .notNullable()
       .defaultTo("doctor");
-    table.specificType("departments", "text[]").defaultTo("{}"); // Array of department names
+    table.specificType("departments", "integer[]").defaultTo("{}"); // Array of department IDs
     table.string("specialization", 100);
     table.string("licenseNumber", 50);
     table.string("contactNumber", 20);
