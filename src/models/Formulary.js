@@ -1,4 +1,5 @@
 import db from "../db/index.js";
+import cache from "../utils/cache.js";
 
 // Formulary model
 class Formulary {
@@ -106,7 +107,33 @@ class Formulary {
       }
     }
     return db("formulary").where({ id: medicineId }).first();
-  } // Create new medicine
+  }
+
+  // Get all medicines (cached for performance)
+  static async findAll(limit = 1000) {
+    const cacheKey = `formulary:all:${limit}`;
+
+    return await cache.getOrSet(
+      cacheKey,
+      async () => {
+        return db("formulary")
+          .select(
+            "id",
+            "name",
+            "strength",
+            "category",
+            "genericName",
+            "frequencyOptions",
+            "dosageGuidelines"
+          ) // Select only existing fields
+          .orderBy("name", "asc")
+          .limit(limit);
+      },
+      10 * 60 * 1000
+    ); // Cache for 10 minutes
+  }
+
+  // Create new medicine
   static async create(medicineData) {
     // Process array fields
     for (const field of this.arrayFields) {

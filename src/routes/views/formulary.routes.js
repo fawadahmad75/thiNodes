@@ -55,6 +55,9 @@ router.post("/", isAdmin, controller.create.bind(controller));
 // Delete medicine (method-override will send DELETE)
 router.delete("/delete", isAdmin, controller.delete.bind(controller));
 
+// Show individual medicine details
+router.get("/:id", isAuthenticated, controller.show.bind(controller));
+
 // Form for editing medicine
 router.get("/:id/edit", isAdmin, controller.edit.bind(controller));
 

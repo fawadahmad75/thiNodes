@@ -1,0 +1,368 @@
+<%- contentFor('body') %>
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">
+                <i class="fas fa-prescription"></i> Prescriptions
+            </h1>
+            <p class="text-muted">Manage patient prescriptions and medical records</p>
+        </div>
+        <div class="btn-group">
+            <a href="/prescriptions/new" class="btn btn-success">
+                <i class="fas fa-plus"></i> New Prescription
+            </a>
+            <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#filtersModal">
+                <i class="fas fa-filter"></i> Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title">Total Prescriptions</h6>
+                            <h4 class="mb-0"><%= prescriptions.length %></h4>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-prescription fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title">Active</h6>
+                            <h4 class="mb-0"><%= prescriptions.filter(p => p.status === 'active').length %></h4>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title">Completed</h6>
+                            <h4 class="mb-0"><%= prescriptions.filter(p => p.status === 'completed').length %></h4>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-clipboard-check fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title">Today's Prescriptions</h6>
+                            <h4 class="mb-0">
+                                <%= prescriptions.filter(p => {
+                                    const today = new Date().toDateString();
+                                    const prescDate = new Date(p.date).toDateString();
+                                    return today === prescDate;
+                                }).length %>
+                            </h4>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-calendar-day fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Quick Actions -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" class="form-control" id="searchPrescriptions" 
+                       placeholder="Search by Patient ID, Name, or Diagnosis...">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="btn-group w-100">
+                <button class="btn btn-outline-primary" id="filterAll">All</button>
+                <button class="btn btn-outline-success" id="filterActive">Active</button>
+                <button class="btn btn-outline-info" id="filterCompleted">Completed</button>
+                <button class="btn btn-outline-secondary" id="filterDiscontinued">Discontinued</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prescriptions Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Prescriptions List</h5>
+        </div>
+        <div class="card-body p-0">
+            <% if (prescriptions && prescriptions.length > 0) { %>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="prescriptionsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Patient</th>
+                                <th>Patient ID</th>
+                                <th>Doctor</th>
+                                <th>Diagnosis</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% prescriptions.forEach(function(prescription) { %>
+                                <tr data-status="<%= prescription.status %>">
+                                    <td>
+                                        <span class="fw-bold"><%= new Date(prescription.date).toLocaleDateString() %></span><br>
+                                        <small class="text-muted"><%= new Date(prescription.date).toLocaleTimeString() %></small>
+                                    </td>
+                                    <td>                                        <% if (prescription.patient) { %>
+                                            <span class="fw-bold"><%= prescription.patient.firstName %> <%= prescription.patient.lastName %></span><br>
+                                            <small class="text-muted">
+                                                <% if (prescription.age) { %>
+                                                    <%= prescription.age %> years, <%= prescription.patient.gender %>
+                                                <% } else { %>
+                                                    <%= prescription.patient.gender %>
+                                                <% } %>
+                                            </small>
+                                        <% } else { %>
+                                            <span class="text-muted">Patient data not available</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary"><%= prescription.patientId %></span>
+                                    </td>
+                                    <td>
+                                        <% if (prescription.doctor) { %>
+                                            <span class="fw-bold"><%= prescription.doctor.name %></span><br>
+                                            <small class="text-muted"><%= prescription.doctor.specialization || 'General' %></small>
+                                        <% } else { %>
+                                            <span class="text-muted">Doctor data not available</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" 
+                                              title="<%= prescription.diagnosis %>">
+                                            <%= prescription.diagnosis %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<%= prescription.status === 'active' ? 'success' : 
+                                                                   prescription.status === 'completed' ? 'primary' : 
+                                                                   'secondary' %>">
+                                            <%= prescription.status.charAt(0).toUpperCase() + prescription.status.slice(1) %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="/prescriptions/<%= prescription.id %>" 
+                                               class="btn btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="/prescriptions/<%= prescription.id %>/edit" 
+                                               class="btn btn-outline-secondary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="printPrescription(<%= prescription.id %>)" title="Print">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="text-center py-5">
+                    <i class="fas fa-prescription fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No prescriptions found</h5>
+                    <p class="text-muted">Create your first prescription to get started.</p>
+                    <a href="/prescriptions/new" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Create New Prescription
+                    </a>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <% if (prescriptions && prescriptions.length > 0) { %>
+        <nav aria-label="Prescriptions pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    <% } %>
+</div>
+
+<!-- Filters Modal -->
+<div class="modal fade" id="filtersModal" tabindex="-1" aria-labelledby="filtersModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filtersModalLabel">Filter Prescriptions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="filtersForm">
+                    <div class="mb-3">
+                        <label for="filterPatientId" class="form-label">Patient ID</label>
+                        <input type="text" class="form-control" id="filterPatientId" name="patientId">
+                    </div>
+                    <div class="mb-3">
+                        <label for="filterDoctorId" class="form-label">Doctor</label>
+                        <select class="form-select" id="filterDoctorId" name="doctorId">
+                            <option value="">All Doctors</option>
+                            <% if (doctors) { %>
+                                <% doctors.forEach(function(doctor) { %>
+                                    <option value="<%= doctor.id %>"><%= doctor.name %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="filterStatus" class="form-label">Status</label>
+                        <select class="form-select" id="filterStatus" name="status">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="discontinued">Discontinued</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="filterDateFrom" class="form-label">Date From</label>
+                            <input type="date" class="form-control" id="filterDateFrom" name="dateFrom">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="filterDateTo" class="form-label">Date To</label>
+                            <input type="date" class="form-control" id="filterDateTo" name="dateTo">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="applyFilters">Apply Filters</button>
+                <button type="button" class="btn btn-outline-secondary" id="clearFilters">Clear Filters</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('searchPrescriptions');
+    const table = document.getElementById('prescriptionsTable');
+    
+    if (searchInput && table) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            
+            Array.from(rows).forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+    
+    // Status filter buttons
+    const filterButtons = {
+        'filterAll': '',
+        'filterActive': 'active',
+        'filterCompleted': 'completed',
+        'filterDiscontinued': 'discontinued'
+    };
+    
+    Object.keys(filterButtons).forEach(buttonId => {
+        const button = document.getElementById(buttonId);
+        if (button) {
+            button.addEventListener('click', function() {
+                const status = filterButtons[buttonId];
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                
+                // Update button states
+                Object.keys(filterButtons).forEach(id => {
+                    document.getElementById(id).classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Filter rows
+                Array.from(rows).forEach(row => {
+                    if (status === '' || row.dataset.status === status) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+    
+    // Apply filters from modal
+    const applyFiltersBtn = document.getElementById('applyFilters');
+    if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', function() {
+            const form = document.getElementById('filtersForm');
+            const formData = new FormData(form);
+            const params = new URLSearchParams();
+            
+            for (let [key, value] of formData.entries()) {
+                if (value) params.append(key, value);
+            }
+            
+            window.location.href = '/prescriptions?' + params.toString();
+        });
+    }
+    
+    // Clear filters
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', function() {
+            window.location.href = '/prescriptions';
+        });
+    }
+});
+
+// Print prescription function
+function printPrescription(prescriptionId) {
+    window.open(`/prescriptions/${prescriptionId}/print`, '_blank');
+}
+</script>

@@ -6,6 +6,7 @@ import formularyRoutes from "./formulary.routes.js";
 import prescriptionRoutes from "./prescription.routes.js";
 import testResultRoutes from "./testResult.routes.js";
 import settingsRoutes from "./settings.routes.js";
+import departmentRoutes from "./department.routes.js";
 
 const router = Router();
 
@@ -31,10 +32,12 @@ router.get("/", (req, res) => {
 
 // Mount all view routes
 router.use("/auth", authRoutes);
+router.use("/departments", isAuthenticated, departmentRoutes);
 router.use("/patients", isAuthenticated, patientRoutes);
 router.use("/formulary", isAuthenticated, formularyRoutes);
 router.use("/prescriptions", isAuthenticated, prescriptionRoutes);
 router.use("/test-results", isAuthenticated, testResultRoutes);
 router.use("/settings", isAuthenticated, settingsRoutes);
+router.use("/departments", isAuthenticated, departmentRoutes);
 
 export default router;

@@ -17,9 +17,10 @@ class MedicineInPrescription {
 
   // Create new medicine in prescription
   static async create(medicineData) {
-    const [id] = await db("medicines_in_prescription")
+    const [result] = await db("medicines_in_prescription")
       .insert(medicineData)
       .returning("id");
+    const id = result.id || result;
     return this.findById(id);
   }
 

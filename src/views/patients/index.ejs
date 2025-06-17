@@ -3,11 +3,28 @@
 <div class="container-fluid">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3">Patients</h1>
+        <div>
+            <h1 class="h3">Patients</h1>
+            <p class="text-muted">Total: <%= total || 0 %> patients</p>
+        </div>
         <a href="/patients/new" class="btn btn-primary">
             <i class="fas fa-user-plus"></i> New Patient
         </a>
     </div>
+
+    <!-- Success/Error Messages -->
+    <% if (successMessage) { %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <%= successMessage %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <% } %>
+    <% if (errorMessage) { %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <%= errorMessage %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <% } %>
 
     <!-- Search Form -->
     <div class="card mb-4">
@@ -35,12 +52,24 @@
                     <input type="date" class="form-control" id="dateTo" name="dateTo" 
                            value="<%= query.dateTo || '' %>">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-1">
+                    <label for="limit" class="form-label">Per Page</label>
+                    <select class="form-select" id="limit" name="limit">
+                        <option value="10" <%= query.limit == 10 ? 'selected' : '' %>>10</option>
+                        <option value="25" <%= query.limit == 25 ? 'selected' : '' %>>25</option>
+                        <option value="50" <%= query.limit == 50 ? 'selected' : '' %>>50</option>
+                        <option value="100" <%= query.limit == 100 ? 'selected' : '' %>>100</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <label class="form-label">&nbsp;</label>
-                    <div class="d-grid">
+                    <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search"></i> Search
                         </button>
+                        <a href="/patients" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Clear
+                        </a>
                     </div>
                 </div>
             </form>
@@ -110,15 +139,44 @@
                         <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
                             <a class="page-link" href="?page=<%= currentPage - 1 %>&<%= query.toString() %>">Previous</a>
                         </li>
-                        <% for(let i = 1; i <= totalPages; i++) { %>
+                        <% 
+                        // Windowed pagination logic
+                        const pageWindow = 2; // pages before/after current
+                        let startPage = Math.max(2, currentPage - pageWindow);
+                        let endPage = Math.min(totalPages - 1, currentPage + pageWindow);
+                        if (currentPage <= 1 + pageWindow) {
+                            endPage = Math.min(totalPages - 1, 1 + 2 * pageWindow);
+                        }
+                        if (currentPage >= totalPages - pageWindow) {
+                            startPage = Math.max(2, totalPages - 2 * pageWindow);
+                        }
+                        %>
+                        <li class="page-item <%= currentPage === 1 ? 'active' : '' %>">
+                            <a class="page-link" href="?page=1&<%= query.toString() %>">1</a>
+                        </li>
+                        <% if (startPage > 2) { %>
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        <% } %>
+                        <% for(let i = startPage; i <= endPage; i++) { %>
                             <li class="page-item <%= currentPage === i ? 'active' : '' %>">
                                 <a class="page-link" href="?page=<%= i %>&<%= query.toString() %>"><%= i %></a>
+                            </li>
+                        <% } %>
+                        <% if (endPage < totalPages - 1) { %>
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        <% } %>
+                        <% if (totalPages > 1) { %>
+                            <li class="page-item <%= currentPage === totalPages ? 'active' : '' %>">
+                                <a class="page-link" href="?page=<%= totalPages %>&<%= query.toString() %>"><%= totalPages %></a>
                             </li>
                         <% } %>
                         <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
                             <a class="page-link" href="?page=<%= currentPage + 1 %>&<%= query.toString() %>">Next</a>
                         </li>
                     </ul>
+                    <div class="text-center text-muted mt-2">
+                        Showing <%= ((currentPage - 1) * query.limit) + 1 %> to <%= Math.min(currentPage * query.limit, total) %> of <%= total %> patients
+                    </div>
                 </nav>
             <% } %>
         </div>

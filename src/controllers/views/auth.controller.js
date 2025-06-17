@@ -35,8 +35,23 @@ class AuthViewController {
       delete userWithoutPassword.password;
       req.session.user = userWithoutPassword;
 
-      // Redirect to dashboard
-      res.redirect("/dashboard");
+      // Redirect to department selection if user has multiple departments
+      if (
+        userWithoutPassword.departments &&
+        userWithoutPassword.departments.length > 1
+      ) {
+        res.redirect("/departments/select");
+      } else if (
+        userWithoutPassword.departments &&
+        userWithoutPassword.departments.length === 1
+      ) {
+        // If user has only one department, set it as current and redirect to dashboard
+        req.session.currentDepartment = userWithoutPassword.departments[0];
+        res.redirect("/dashboard");
+      } else {
+        // Fallback for users without departments
+        res.redirect("/dashboard");
+      }
     } catch (error) {
       console.error("Login error:", error);
       req.session.error = "An error occurred during login";
@@ -54,31 +69,66 @@ class AuthViewController {
   }
   async dashboard(req, res, next) {
     try {
+      // Get current department from session
+      const currentDepartmentId = req.session.currentDepartment;
+
+      // If no department is selected and user has multiple departments, redirect to selection
+      if (!currentDepartmentId && req.session.user.departments.length > 1) {
+        return res.redirect("/departments/select");
+      }
+
+      // Get department details if available
+      let currentDepartment = null;
+      if (currentDepartmentId) {
+        const { Department } = await import("../../models/index.js");
+        currentDepartment = await Department.findById(currentDepartmentId);
+      }
+
       // Get today's date range
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      // Get dashboard statistics
+      // Get dashboard statistics - filtered by department if selected
+      const filters = {
+        dateFrom: today,
+        dateTo: tomorrow,
+      };
+
+      if (currentDepartmentId) {
+        filters.departmentId = currentDepartmentId;
+      }
+
+      // Base stats for all users
       const stats = {
-        todayPatients: await Patient.countAll({
-          dateFrom: today,
-          dateTo: tomorrow,
-        }),
-        todayPrescriptions: 0, // We'll implement these later
-        pendingTests: 0,
-      }; // Get recent patients (last 10)
-      const recentPatients = await Patient.findAll({}, 1, 10);
+        todayPatients: await Patient.countAll(filters),
+        todayPrescriptions: await Prescription.countAll(filters),
+        pendingTests: 0, // We'll implement this when test results module is ready
+        activePatients: await Patient.countAll({ status: 'active' }),
+      };
+
+      // Add admin-specific stats
+      if (req.session.user.role === 'admin') {
+        const { User, Department } = await import("../../models/index.js");
+        stats.totalUsers = await User.countAll();
+        stats.totalDepartments = await Department.countAll();
+      }
+
+      // Get recent patients (last 10) - add department filter if appropriate
+      const recentPatients = await Patient.findAll(filters, 1, 10);
 
       // Get recent prescriptions (last 10)
       const recentPrescriptions = await Prescription.findAll({}, 1, 10);
 
       res.render("dashboard/index", {
-        title: "Dashboard",
+        title: currentDepartment
+          ? `${currentDepartment.name} Dashboard`
+          : "Dashboard",
         active: "dashboard",
         stats,
         user: req.session.user,
+        currentDepartment,
         recentPatients,
         recentPrescriptions,
       });

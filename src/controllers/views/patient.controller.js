@@ -4,6 +4,8 @@ class PatientViewController {
   async index(req, res, next) {
     try {
       // Extract query parameters
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
       const search = req.query.search || "";
       const patientId = req.query.patientId || "";
       const dateFrom = req.query.dateFrom || "";
@@ -16,16 +18,22 @@ class PatientViewController {
       if (dateFrom) filters.dateFrom = new Date(dateFrom);
       if (dateTo) filters.dateTo = new Date(dateTo);
 
-      // Get page and limit
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10; // Get total count for pagination
+      // Get total count for pagination
       const total = await Patient.countAll(filters);
 
       // Get patients with filters
       const patients = await Patient.findAll(filters, page, limit);
 
-      // Calculate total pages
+      // Calculate pagination info
       const totalPages = Math.ceil(total / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+
+      // Get success/error messages from session
+      const successMessage = req.session.successMessage;
+      const errorMessage = req.session.errorMessage;
+      delete req.session.successMessage;
+      delete req.session.errorMessage;
 
       res.render("patients/index", {
         title: "Patients",
@@ -34,6 +42,13 @@ class PatientViewController {
         user: req.session.user,
         currentPage: page,
         totalPages,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: page + 1,
+        prevPage: page - 1,
+        total,
+        successMessage,
+        errorMessage,
         query: {
           search,
           patientId,
@@ -41,6 +56,11 @@ class PatientViewController {
           dateTo,
           page,
           limit,
+          toString: () =>
+            Object.entries({ search, patientId, dateFrom, dateTo, limit })
+              .filter(([_, v]) => v)
+              .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+              .join("&"),
         },
       });
     } catch (error) {

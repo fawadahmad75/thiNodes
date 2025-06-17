@@ -1,0 +1,847 @@
+<%- contentFor('body') %>
+
+<style>
+.medicine-combobox {
+    position: relative;
+}
+
+.medicine-dropdown {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.medicine-option {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.medicine-option:hover {
+    background-color: #f8f9fa !important;
+}
+
+.medicine-option:last-child {
+    border-bottom: none !important;
+}
+
+.medicine-search {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 35px;
+}
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-prescription"></i> 
+                        <%= prescription ? 'Edit Prescription' : 'New Prescription' %>
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form id="prescriptionForm" method="POST" action="/prescriptions/<%= prescription ? prescription.id : '' %>">
+                        
+                        <!-- Patient Selection/Info Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0">Patient Information</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <% if (!patient) { %>
+                                            <!-- Patient Selection -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <label for="patientId" class="form-label">Patient ID</label>
+                                                    <input type="text" class="form-control" id="patientId" name="patientId" 
+                                                           placeholder="Enter Patient ID" required>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="fetchPatient">
+                                                        <i class="fas fa-search"></i> Fetch Patient
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        <% } else { %>
+                                            <!-- Patient Demographics -->
+                                            <input type="hidden" name="patientId" value="<%= patient.patientId %>">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <strong>Patient ID:</strong> <%= patient.patientId %>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <strong>Name:</strong> <%= patient.firstName %> <%= patient.lastName %>
+                                                </div>                                                <div class="col-md-2">
+                                                    <strong>Age:</strong> 
+                                                    <% if (patient.dateOfBirth) { %>
+                                                        <%= Math.floor((Date.now() - new Date(patient.dateOfBirth)) / (365.25 * 24 * 60 * 60 * 1000)) %>
+                                                    <% } else { %>
+                                                        N/A
+                                                    <% } %>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <strong>Gender:</strong> <%= patient.gender %>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <strong>Contact:</strong> <%= patient.contact %>
+                                                </div>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>                        </div>
+
+                        <% if (locals.patient) { %>
+                        <!-- Medical History Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-warning">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h5 class="mb-0">
+                                            Medical History 
+                                            <button type="button" class="btn btn-sm btn-outline-dark float-end" 
+                                                    data-bs-toggle="collapse" data-bs-target="#medicalHistoryCollapse">
+                                                <i class="fas fa-edit"></i> Update
+                                            </button>
+                                        </h5>
+                                    </div>                                    <div class="card-body">
+                                        <!-- Medical History Display -->
+                                        <% if (locals.medicalHistory) { %>
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <strong>Blood Group:</strong> 
+                                                    <span class="badge bg-danger"><%= locals.medicalHistory && locals.medicalHistory.bloodGroup || 'Unknown' %></span>
+                                                </div>
+                                                <div class="col-md-9">
+                                                    <strong>Existing Conditions:</strong>                                                    <% if (locals.medicalHistory && locals.medicalHistory.existingConditions && locals.medicalHistory.existingConditions.length > 0) { %>
+                                                        <% locals.medicalHistory.existingConditions.forEach(condition => { %>
+                                                            <span class="badge bg-warning text-dark me-1"><%= condition %></span>
+                                                        <% }); %>
+                                                    <% } else { %>
+                                                        <span class="text-muted">None recorded</span>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-2">
+                                                <div class="col-md-6">
+                                                    <strong>Allergies:</strong>                                                    <% if (locals.medicalHistory && locals.medicalHistory.allergies && locals.medicalHistory.allergies.length > 0) { %>
+                                                        <% locals.medicalHistory.allergies.forEach(allergy => { %>
+                                                            <span class="badge bg-danger me-1"><%= allergy %></span>
+                                                        <% }); %>
+                                                    <% } else { %>
+                                                        <span class="text-muted">None recorded</span>
+                                                    <% } %>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <strong>Major Conditions:</strong>                                                    <% if (locals.medicalHistory && locals.medicalHistory.majorConditions && locals.medicalHistory.majorConditions.length > 0) { %>
+                                                        <% locals.medicalHistory.majorConditions.forEach(condition => { %>
+                                                            <span class="badge bg-dark me-1"><%= condition %></span>
+                                                        <% }); %>
+                                                    <% } else { %>
+                                                        <span class="text-muted">None recorded</span>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle"></i> No medical history recorded for this patient.
+                                            </div>
+                                        <% } %>                                        <!-- Medical History Update Form (Collapsed) -->
+                                        <div class="collapse mt-3" id="medicalHistoryCollapse">
+                                            <div class="card card-body bg-light">
+                                                <h6>Update Medical History</h6>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-3">
+                                                        <label for="bloodGroup" class="form-label">Blood Group</label>
+                                                        <select class="form-select" id="bloodGroup" name="bloodGroup">
+                                                            <option value="">Select</option>
+                                                            <option value="A+" <%= locals.medicalHistory && locals.medicalHistory.bloodGroup === 'A+' ? 'selected' : '' %>>A+</option>
+                                                            <option value="A-" <%= locals.medicalHistory && locals.medicalHistory.bloodGroup === 'A-' ? 'selected' : '' %>>A-</option>
+                                                            <option value="B+" <%= locals.medicalHistory && locals.medicalHistory.bloodGroup === 'B+' ? 'selected' : '' %>>B+</option>
+                                                            <option value="B-" <%= locals.medicalHistory && locals.medicalHistory.bloodGroup === 'B-' ? 'selected' : '' %>>B-</option>
+                                                            <option value="AB+" <%= locals.medicalHistory && locals.medicalHistory.bloodGroup === 'AB+' ? 'selected' : '' %>>AB+</option>
+                                                            <option value="AB-" <%= locals.medicalHistory && locals.medicalHistory.bloodGroup === 'AB-' ? 'selected' : '' %>>AB-</option>
+                                                            <option value="O+" <%= locals.medicalHistory && locals.medicalHistory.bloodGroup === 'O+' ? 'selected' : '' %>>O+</option>
+                                                            <option value="O-" <%= locals.medicalHistory && locals.medicalHistory.bloodGroup === 'O-' ? 'selected' : '' %>>O-</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Existing Conditions -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Existing Conditions</label>
+                                                        <div class="input-group mb-2">
+                                                            <select class="form-select" id="existingConditionsSelect">
+                                                                <option value="">Add condition...</option>
+                                                                <% locals.medicalConstants.existingConditions.forEach(condition => { %>
+                                                                    <option value="<%= condition %>"><%= condition %></option>
+                                                                <% }); %>
+                                                            </select>
+                                                            <button class="btn btn-outline-primary" type="button" id="addExistingCondition">
+                                                                <i class="fas fa-plus"></i> Add
+                                                            </button>
+                                                        </div>
+                                                        <div id="existingConditionsContainer" class="d-flex flex-wrap gap-1">
+                                                            <% if (locals.medicalHistory && locals.medicalHistory.existingConditions) { %>
+                                                                <% locals.medicalHistory.existingConditions.forEach(condition => { %>
+                                                                    <span class="badge bg-secondary d-inline-flex align-items-center">
+                                                                        <%= condition %>
+                                                                        <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7em;" onclick="removeCondition(this, 'existingConditions')"></button>
+                                                                        <input type="hidden" name="existingConditions[]" value="<%= condition %>">
+                                                                    </span>
+                                                                <% }); %>
+                                                            <% } %>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Allergies -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Allergies</label>
+                                                        <div class="input-group mb-2">
+                                                            <select class="form-select" id="allergiesSelect">
+                                                                <option value="">Add allergy...</option>
+                                                                <% locals.medicalConstants.allergies.forEach(allergy => { %>
+                                                                    <option value="<%= allergy %>"><%= allergy %></option>
+                                                                <% }); %>
+                                                            </select>
+                                                            <button class="btn btn-outline-primary" type="button" id="addAllergy">
+                                                                <i class="fas fa-plus"></i> Add
+                                                            </button>
+                                                        </div>
+                                                        <div id="allergiesContainer" class="d-flex flex-wrap gap-1">
+                                                            <% if (locals.medicalHistory && locals.medicalHistory.allergies) { %>
+                                                                <% locals.medicalHistory.allergies.forEach(allergy => { %>
+                                                                    <span class="badge bg-danger d-inline-flex align-items-center">
+                                                                        <%= allergy %>
+                                                                        <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7em;" onclick="removeCondition(this, 'allergies')"></button>
+                                                                        <input type="hidden" name="allergies[]" value="<%= allergy %>">
+                                                                    </span>
+                                                                <% }); %>
+                                                            <% } %>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Major Conditions -->
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Major Medical Conditions</label>
+                                                        <div class="input-group mb-2">
+                                                            <select class="form-select" id="majorConditionsSelect">
+                                                                <option value="">Add major condition...</option>
+                                                                <% locals.medicalConstants.majorConditions.forEach(condition => { %>
+                                                                    <option value="<%= condition %>"><%= condition %></option>
+                                                                <% }); %>
+                                                            </select>
+                                                            <button class="btn btn-outline-primary" type="button" id="addMajorCondition">
+                                                                <i class="fas fa-plus"></i> Add
+                                                            </button>
+                                                        </div>
+                                                        <div id="majorConditionsContainer" class="d-flex flex-wrap gap-1">
+                                                            <% if (locals.medicalHistory && locals.medicalHistory.majorConditions) { %>
+                                                                <% locals.medicalHistory.majorConditions.forEach(condition => { %>
+                                                                    <span class="badge bg-warning text-dark d-inline-flex align-items-center">
+                                                                        <%= condition %>
+                                                                        <button type="button" class="btn-close ms-1" style="font-size: 0.7em;" onclick="removeCondition(this, 'majorConditions')"></button>
+                                                                        <input type="hidden" name="majorConditions[]" value="<%= condition %>">
+                                                                    </span>
+                                                                <% }); %>
+                                                            <% } %>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Previous Prescriptions Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h5 class="mb-0">Previous Prescriptions</h5>
+                                    </div>                                    <div class="card-body">
+                                        <% if (locals.previousPrescriptions && locals.previousPrescriptions.length > 0) { %>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Date</th>
+                                                            <th>Diagnosis</th>
+                                                            <th>Status</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <% locals.previousPrescriptions.forEach(prescription => { %>
+                                                            <tr>
+                                                                <td><%= new Date(prescription.date).toLocaleDateString() %></td>
+                                                                <td>
+                                                                    <% if (Array.isArray(prescription.diagnosis)) { %>
+                                                                        <%= prescription.diagnosis.join(', ') %>
+                                                                    <% } else { %>
+                                                                        <%= prescription.diagnosis %>
+                                                                    <% } %>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="badge bg-<%= prescription.status === 'active' ? 'success' : prescription.status === 'completed' ? 'primary' : 'secondary' %>">
+                                                                        <%= prescription.status %>
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="/prescriptions/<%= prescription.id %>" class="btn btn-sm btn-outline-primary">
+                                                                        <i class="fas fa-eye"></i> View
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        <% }); %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle"></i> No previous prescriptions found for this patient.
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Prescription Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0">Current Prescription</h5>
+                                    </div>                                    <div class="card-body">
+                                        <!-- Symptoms -->
+                                        <div class="mb-3">
+                                            <label for="symptoms" class="form-label">Symptoms</label>
+                                            <textarea class="form-control" id="symptoms" name="symptoms" rows="3" 
+                                                      placeholder="Enter patient symptoms..."><%= prescription ? prescription.symptoms : '' %></textarea>
+                                        </div>                                        <!-- Diagnosis -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Diagnosis <span class="text-danger">*</span></label>
+                                            <div class="input-group mb-2">
+                                                <input type="text" class="form-control" id="diagnosisInput" placeholder="Enter diagnosis...">
+                                                <button class="btn btn-outline-primary" type="button" id="addDiagnosis">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+                                            <div id="diagnosisContainer" class="d-flex flex-wrap gap-1 mb-2">
+                                                <% if (prescription && prescription.diagnosis) { %>
+                                                    <% let diagnosisArray = Array.isArray(prescription.diagnosis) ? prescription.diagnosis : [prescription.diagnosis]; %>
+                                                    <% diagnosisArray.forEach(diagnosis => { %>
+                                                        <span class="badge bg-info d-inline-flex align-items-center">
+                                                            <%= diagnosis %>
+                                                            <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7em;" onclick="removeCondition(this, 'diagnosis')"></button>
+                                                            <input type="hidden" name="diagnosis[]" value="<%= diagnosis %>">
+                                                        </span>
+                                                    <% }); %>
+                                                <% } %>
+                                            </div>
+                                            <small class="text-muted">Add multiple diagnoses. These will be automatically considered for patient's medical history.</small>
+                                        </div>
+
+                                        <!-- Clinical Notes -->
+                                        <div class="mb-3">
+                                            <label for="clinicalNotes" class="form-label">Clinical Notes</label>
+                                            <textarea class="form-control" id="clinicalNotes" name="clinicalNotes" rows="2" 
+                                                      placeholder="Enter clinical notes..."><%= prescription ? prescription.clinicalNotes : '' %></textarea>
+                                        </div>                                        <!-- Medicines Section -->
+                                        <div class="mb-4">
+                                            <h6>Medicines</h6>
+                                            <div class="row mb-2 text-muted small">
+                                                <div class="col-md-4"><strong>Medicine</strong></div>
+                                                <div class="col-md-2"><strong>Dosage</strong></div>
+                                                <div class="col-md-2"><strong>Frequency</strong></div>
+                                                <div class="col-md-2"><strong>Duration</strong></div>
+                                                <div class="col-md-2"><strong>Action</strong></div>
+                                            </div>
+                                            <div id="medicinesContainer">
+                                                <!-- Medicines will be added dynamically -->
+                                            </div>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="addMedicine">
+                                                <i class="fas fa-plus"></i> Add Medicine
+                                            </button>
+                                        </div><!-- Tests Advised Section -->
+                                        <div class="mb-3">
+                                            <h6>Tests Advised</h6>
+                                            <div class="row mb-2 text-muted small">
+                                                <div class="col-md-4"><strong>Test Name</strong></div>
+                                                <div class="col-md-3"><strong>Instructions</strong></div>
+                                                <div class="col-md-3"><strong>When to Do</strong></div>
+                                                <div class="col-md-2"><strong>Action</strong></div>
+                                            </div>
+                                            <div id="testsContainer">
+                                                <!-- Tests will be added dynamically -->
+                                            </div>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="addTest">
+                                                <i class="fas fa-plus"></i> Add Test
+                                            </button>
+                                        </div>
+
+                                        <!-- Additional Instructions -->
+                                        <div class="mb-3">
+                                            <label for="additionalInstructions" class="form-label">Additional Instructions</label>
+                                            <textarea class="form-control" id="additionalInstructions" name="additionalInstructions" rows="2" 
+                                                      placeholder="Enter additional instructions..."><%= prescription ? prescription.additionalInstructions : '' %></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <% } %>
+
+                        <!-- Form Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="/prescriptions" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Back to List                                    </a>
+                                    <% if (locals.patient) { %>
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-save"></i> Save Prescription
+                                        </button>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for dynamic form elements -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch Patient functionality
+    const fetchPatientBtn = document.getElementById('fetchPatient');
+    const patientIdInput = document.getElementById('patientId');
+    
+    if (fetchPatientBtn && patientIdInput) {
+        fetchPatientBtn.addEventListener('click', async function() {
+            const patientId = patientIdInput.value.trim();
+            
+            if (!patientId) {
+                alert('Please enter a Patient ID');
+                return;
+            }
+            
+            // Show loading state
+            fetchPatientBtn.disabled = true;
+            fetchPatientBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching...';
+            
+            try {
+                const response = await fetch(`/api/patients/${patientId}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success && data.patient) {
+                        // Redirect to the prescription form with patient data
+                        window.location.href = `/prescriptions/new?patientId=${patientId}`;
+                    } else {
+                        alert('Patient not found');
+                    }
+                } else {
+                    alert('Error fetching patient data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error fetching patient data');
+            } finally {
+                // Restore button state
+                fetchPatientBtn.disabled = false;
+                fetchPatientBtn.innerHTML = '<i class="fas fa-search"></i> Fetch Patient';
+            }
+        });
+        
+        // Allow Enter key to trigger fetch
+        patientIdInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                fetchPatientBtn.click();
+            }
+        });
+    }
+
+    // Medicines management
+    let medicineCounter = 0;
+    const medicinesContainer = document.getElementById('medicinesContainer');
+    const addMedicineBtn = document.getElementById('addMedicine');    function addMedicineRow() {
+        const row = document.createElement('div');
+        row.className = 'row mb-2 medicine-row';
+        row.innerHTML = `
+            <div class="col-md-4">
+                <div class="medicine-combobox position-relative">
+                    <input type="text" class="form-control medicine-search" placeholder="Search medicine..." autocomplete="off">
+                    <input type="hidden" name="medicines[${medicineCounter}][medicineId]" class="medicine-id-input" required>
+                    <div class="medicine-dropdown position-absolute w-100 bg-white border border-top-0 d-none" style="max-height: 200px; overflow-y: auto; z-index: 1000;">
+                        <% medicines.forEach(medicine => { %>
+                            <div class="medicine-option p-2 border-bottom" data-id="<%= medicine.id %>" data-name="<%= medicine.name %>" data-strength="<%= medicine.strength %>">
+                                <strong><%= medicine.name %></strong>
+                                <% if (medicine.strength) { %>
+                                    <span class="text-muted">- <%= medicine.strength %></span>
+                                <% } %>
+                                <% if (medicine.form) { %>
+                                    <small class="text-info d-block"><%= medicine.form %></small>
+                                <% } %>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="medicines[${medicineCounter}][dosage]" placeholder="Dosage" required>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="medicines[${medicineCounter}][frequency]" placeholder="Frequency" required>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="medicines[${medicineCounter}][duration]" placeholder="Duration" required>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger btn-sm remove-medicine">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>        `;
+        medicinesContainer.appendChild(row);
+        
+        // Setup combobox functionality for the new row
+        setupMedicineCombobox(row);
+        
+        medicineCounter++;
+    }
+
+    if (addMedicineBtn) {
+        addMedicineBtn.addEventListener('click', addMedicineRow);
+    }
+
+    // Remove medicine row
+    if (medicinesContainer) {
+        medicinesContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-medicine') || e.target.parentElement.classList.contains('remove-medicine')) {
+                e.target.closest('.medicine-row').remove();
+            }
+        });
+    }
+
+    // Tests management
+    let testCounter = 0;
+    const testsContainer = document.getElementById('testsContainer');
+    const addTestBtn = document.getElementById('addTest');    function addTestRow() {
+        const row = document.createElement('div');
+        row.className = 'row mb-2 test-row';
+        row.innerHTML = `
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="tests[${testCounter}][testName]" placeholder="Test Name" required>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" name="tests[${testCounter}][instructions]" placeholder="Instructions">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="tests[${testCounter}][when_to_do]">
+                    <option value="this_visit">This Visit</option>
+                    <option value="next_visit">Next Visit</option>
+                    <option value="as_needed">As Needed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger btn-sm remove-test">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        testsContainer.appendChild(row);
+        testCounter++;
+    }
+
+    if (addTestBtn) {
+        addTestBtn.addEventListener('click', addTestRow);
+    }
+
+    // Remove test row
+    if (testsContainer) {
+        testsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-test') || e.target.parentElement.classList.contains('remove-test')) {
+                e.target.closest('.test-row').remove();
+            }
+        });
+    }    // Add initial rows only if containers exist (when patient is loaded)
+    if (medicinesContainer && addMedicineBtn) {
+        // Add at least one medicine row
+        addMedicineRow();
+    }
+    
+    if (testsContainer && addTestBtn) {
+        // Add at least one test row
+        addTestRow();
+    }
+      // Populate existing data if editing
+    <% if (locals.prescribedMedicines && locals.prescribedMedicines.length > 0) { %>
+        // Populate existing medicines
+        setTimeout(() => {
+            const medicineRows = document.querySelectorAll('.medicine-row');
+            const existingMedicines = <%- JSON.stringify(locals.prescribedMedicines) %>;
+            
+            existingMedicines.forEach((medicine, index) => {
+                if (index > 0) {
+                    addMedicineRow(); // Add additional rows if needed
+                }
+                const row = document.querySelectorAll('.medicine-row')[index];
+                if (row) {
+                    const searchInput = row.querySelector('.medicine-search');
+                    const hiddenInput = row.querySelector('.medicine-id-input');
+                    
+                    // Find the medicine name from the dropdown options
+                    const option = row.querySelector(`[data-id="${medicine.medicineId}"]`);
+                    if (option) {
+                        const medicineName = option.getAttribute('data-name');
+                        const medicineStrength = option.getAttribute('data-strength');
+                        searchInput.value = medicineName + (medicineStrength ? ' - ' + medicineStrength : '');
+                    }
+                    
+                    hiddenInput.value = medicine.medicineId;
+                    row.querySelector('input[name*="dosage"]').value = medicine.dosage;
+                    row.querySelector('input[name*="frequency"]').value = medicine.frequency;
+                    row.querySelector('input[name*="duration"]').value = medicine.duration;
+                }
+            });
+        }, 100);
+    <% } %>
+    
+    <% if (locals.advisedTests && locals.advisedTests.length > 0) { %>
+        // Populate existing tests
+        setTimeout(() => {
+            const testRows = document.querySelectorAll('.test-row');
+            const existingTests = <%- JSON.stringify(locals.advisedTests) %>;
+            
+            existingTests.forEach((test, index) => {
+                if (index > 0) {
+                    addTestRow(); // Add additional rows if needed
+                }
+                const row = document.querySelectorAll('.test-row')[index];
+                if (row) {
+                    row.querySelector('input[name*="testName"]').value = test.testName;
+                    row.querySelector('input[name*="instructions"]').value = test.instructions || '';
+                    row.querySelector('select[name*="when_to_do"]').value = test.when_to_do || 'this_visit';
+                }
+            });
+        }, 100);
+    <% } %>
+
+    // Medical History Management Functions
+    function setupMedicalHistoryHandlers() {
+        // Existing Conditions
+        const addExistingConditionBtn = document.getElementById('addExistingCondition');
+        const existingConditionsSelect = document.getElementById('existingConditionsSelect');
+        const existingConditionsContainer = document.getElementById('existingConditionsContainer');
+
+        if (addExistingConditionBtn && existingConditionsSelect && existingConditionsContainer) {
+            addExistingConditionBtn.addEventListener('click', function() {
+                const value = existingConditionsSelect.value.trim();
+                if (value && !isDuplicate(existingConditionsContainer, value)) {
+                    addBadge(existingConditionsContainer, value, 'existingConditions', 'bg-secondary');
+                    existingConditionsSelect.value = '';
+                }
+            });
+        }
+
+        // Allergies
+        const addAllergyBtn = document.getElementById('addAllergy');
+        const allergiesSelect = document.getElementById('allergiesSelect');
+        const allergiesContainer = document.getElementById('allergiesContainer');
+
+        if (addAllergyBtn && allergiesSelect && allergiesContainer) {
+            addAllergyBtn.addEventListener('click', function() {
+                const value = allergiesSelect.value.trim();
+                if (value && !isDuplicate(allergiesContainer, value)) {
+                    addBadge(allergiesContainer, value, 'allergies', 'bg-danger');
+                    allergiesSelect.value = '';
+                }
+            });
+        }
+
+        // Major Conditions
+        const addMajorConditionBtn = document.getElementById('addMajorCondition');
+        const majorConditionsSelect = document.getElementById('majorConditionsSelect');
+        const majorConditionsContainer = document.getElementById('majorConditionsContainer');
+
+        if (addMajorConditionBtn && majorConditionsSelect && majorConditionsContainer) {
+            addMajorConditionBtn.addEventListener('click', function() {
+                const value = majorConditionsSelect.value.trim();
+                if (value && !isDuplicate(majorConditionsContainer, value)) {
+                    addBadge(majorConditionsContainer, value, 'majorConditions', 'bg-warning text-dark');
+                    majorConditionsSelect.value = '';
+                }
+            });
+        }
+    }
+
+    // Diagnosis Management
+    function setupDiagnosisHandlers() {
+        const addDiagnosisBtn = document.getElementById('addDiagnosis');
+        const diagnosisInput = document.getElementById('diagnosisInput');
+        const diagnosisContainer = document.getElementById('diagnosisContainer');
+
+        if (addDiagnosisBtn && diagnosisInput && diagnosisContainer) {
+            addDiagnosisBtn.addEventListener('click', function() {
+                const value = diagnosisInput.value.trim();
+                if (value && !isDuplicate(diagnosisContainer, value)) {
+                    addBadge(diagnosisContainer, value, 'diagnosis', 'bg-info');
+                    diagnosisInput.value = '';
+                }
+            });
+
+            // Allow Enter key to add diagnosis
+            diagnosisInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addDiagnosisBtn.click();
+                }
+            });
+        }
+    }
+
+    // Helper function to add badge
+    function addBadge(container, value, fieldName, bgClass) {
+        const badge = document.createElement('span');
+        badge.className = `badge ${bgClass} d-inline-flex align-items-center`;
+        badge.innerHTML = `
+            ${value}
+            <button type="button" class="btn-close ${bgClass.includes('text-dark') ? '' : 'btn-close-white'} ms-1" 
+                    style="font-size: 0.7em;" onclick="removeCondition(this, '${fieldName}')"></button>
+            <input type="hidden" name="${fieldName}[]" value="${value}">
+        `;
+        container.appendChild(badge);
+    }
+
+    // Helper function to check for duplicates
+    function isDuplicate(container, value) {
+        const existingInputs = container.querySelectorAll('input[type="hidden"]');
+        return Array.from(existingInputs).some(input => input.value === value);
+    }
+
+    // Initialize handlers
+    setupMedicalHistoryHandlers();
+    setupDiagnosisHandlers();
+
+    // Medicine combobox functionality
+    function setupMedicineCombobox(row) {
+        const searchInput = row.querySelector('.medicine-search');
+        const hiddenInput = row.querySelector('.medicine-id-input');
+        const dropdown = row.querySelector('.medicine-dropdown');
+        const options = row.querySelectorAll('.medicine-option');
+
+        // Show dropdown on focus
+        searchInput.addEventListener('focus', function() {
+            dropdown.classList.remove('d-none');
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!row.contains(e.target)) {
+                dropdown.classList.add('d-none');
+            }
+        });
+
+        // Filter options as user types
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let hasVisibleOptions = false;
+
+            options.forEach(option => {
+                const medicineName = option.getAttribute('data-name').toLowerCase();
+                const medicineStrength = option.getAttribute('data-strength')?.toLowerCase() || '';
+                
+                if (medicineName.includes(searchTerm) || medicineStrength.includes(searchTerm)) {
+                    option.classList.remove('d-none');
+                    hasVisibleOptions = true;
+                } else {
+                    option.classList.add('d-none');
+                }
+            });
+
+            // Show/hide dropdown based on whether there are visible options
+            if (hasVisibleOptions && searchTerm.length > 0) {
+                dropdown.classList.remove('d-none');
+            } else if (searchTerm.length === 0) {
+                dropdown.classList.remove('d-none');
+                options.forEach(option => option.classList.remove('d-none'));
+            } else {
+                dropdown.classList.add('d-none');
+            }
+
+            // Clear hidden input if search doesn't match exactly
+            hiddenInput.value = '';
+        });
+
+        // Handle option selection
+        options.forEach(option => {
+            option.addEventListener('click', function() {
+                const medicineId = this.getAttribute('data-id');
+                const medicineName = this.getAttribute('data-name');
+                const medicineStrength = this.getAttribute('data-strength');
+                
+                searchInput.value = medicineName + (medicineStrength ? ' - ' + medicineStrength : '');
+                hiddenInput.value = medicineId;
+                dropdown.classList.add('d-none');
+            });
+
+            // Add hover effect
+            option.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#f8f9fa';
+            });
+
+            option.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+            });
+        });
+
+        // Handle keyboard navigation
+        searchInput.addEventListener('keydown', function(e) {
+            const visibleOptions = Array.from(options).filter(opt => !opt.classList.contains('d-none'));
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (visibleOptions.length > 0) {
+                    visibleOptions[0].focus();
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.add('d-none');
+            }
+        });
+    }
+
+    // Apply medicine combobox setup to existing rows
+    const existingMedicineRows = document.querySelectorAll('.medicine-row');
+    existingMedicineRows.forEach(row => setupMedicineCombobox(row));
+
+    // Re-apply combobox setup when new rows are added
+    medicinesContainer.addEventListener('DOMNodeInserted', function(e) {
+        if (e.target.classList.contains('medicine-row')) {
+            setupMedicineCombobox(e.target);
+        }
+    });
+});
+
+// Global function to remove conditions (used by onclick handlers)
+function removeCondition(button, fieldName) {
+    button.closest('.badge').remove();
+}
+</script>

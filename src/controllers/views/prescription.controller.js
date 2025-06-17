@@ -2,12 +2,22 @@ import {
   Prescription,
   Patient,
   User,
+  Formulary,
   MedicineInPrescription,
   AdvisedTest,
   HospitalSettings,
   PrintSettings,
+  MedicalHistory,
 } from "../../models/index.js";
 import PDFDocument from "pdfkit";
+import {
+  EXISTING_CONDITIONS,
+  MAJOR_CONDITIONS,
+  COMMON_ALLERGIES,
+  SURGERY_TYPES,
+  IMMUNIZATIONS,
+  FAMILY_CONDITIONS,
+} from "../../constants/medical.js";
 
 class PrescriptionViewController {
   // Show all prescriptions
@@ -22,7 +32,7 @@ class PrescriptionViewController {
 
       // Prepare filters
       let filters = {};
-      if (patientId) filters.patientId = parseInt(patientId);
+      if (patientId) filters.patientId = patientId;
       if (doctorId) filters.doctorId = parseInt(doctorId);
       if (status) filters.status = status;
       if (dateFrom) filters.dateFrom = new Date(dateFrom);
@@ -30,13 +40,17 @@ class PrescriptionViewController {
 
       // Get page and limit
       const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
+      const limit = parseInt(req.query.limit) || 20;
 
-      const prescriptions = await Prescription.findAll(
+      // Get prescriptions with related data
+      const prescriptions = await Prescription.findAllWithDetails(
         filters,
         parseInt(page),
         parseInt(limit)
       );
+
+      // Get all doctors for filter dropdown
+      const doctors = await User.findAll({ role: "doctor" });
 
       // Count total records for pagination
       const total = await Prescription.countAll(filters);
@@ -46,6 +60,7 @@ class PrescriptionViewController {
         title: "Prescriptions",
         active: "prescriptions",
         prescriptions,
+        doctors,
         currentPage: page,
         totalPages,
         query: {
@@ -70,23 +85,45 @@ class PrescriptionViewController {
     try {
       // Get patient if patientId is provided
       let patient = null;
+      let medicalHistory = null;
+      let previousPrescriptions = [];
+
       if (req.query.patientId) {
-        patient = await Patient.findById(parseInt(req.query.patientId));
+        patient = await Patient.findById(req.query.patientId);
+        if (patient) {
+          // Get medical history
+          medicalHistory = await MedicalHistory.findByPatientId(
+            patient.patientId
+          );
+
+          // Get last 3 prescriptions for this patient
+          previousPrescriptions = await Prescription.findByPatientId(
+            patient.patientId,
+            1,
+            3
+          );
+        }
       }
 
       // Get medicine list for dropdown
       const medicines = await Formulary.findAll();
 
-      // Get test list for dropdown
-      const tests = await TestCatalog.findAll();
-
       res.render("prescriptions/form", {
         title: "New Prescription",
         active: "prescriptions",
         prescription: null,
-        patient,
-        medicines,
-        tests,
+        patient: patient || null,
+        medicalHistory: medicalHistory || null,
+        previousPrescriptions: previousPrescriptions || [],
+        medicines: medicines || [],
+        medicalConstants: {
+          existingConditions: EXISTING_CONDITIONS,
+          majorConditions: MAJOR_CONDITIONS,
+          allergies: COMMON_ALLERGIES,
+          surgeryTypes: SURGERY_TYPES,
+          immunizations: IMMUNIZATIONS,
+          familyConditions: FAMILY_CONDITIONS,
+        },
         today: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD
       });
     } catch (error) {
@@ -130,6 +167,9 @@ class PrescriptionViewController {
       // Get advised tests
       const tests = await AdvisedTest.findByPrescriptionId(id);
 
+      // Get available medicines for edit modal
+      const allMedicines = await Formulary.findAll();
+
       res.render("prescriptions/show", {
         title: "Prescription Details",
         active: "prescriptions",
@@ -138,6 +178,7 @@ class PrescriptionViewController {
         doctor,
         medicines,
         tests,
+        allMedicines, // For the edit modal dropdown
       });
     } catch (error) {
       console.error("Error fetching prescription:", error);
@@ -171,6 +212,18 @@ class PrescriptionViewController {
       // Get patient info
       const patient = await Patient.findById(prescription.patientId);
 
+      // Get medical history
+      const medicalHistory = await MedicalHistory.findByPatientId(
+        patient.patientId
+      );
+
+      // Get last 3 prescriptions for this patient
+      const previousPrescriptions = await Prescription.findByPatientId(
+        patient.patientId,
+        1,
+        3
+      );
+
       // Get medicines prescribed
       const prescribedMedicines =
         await MedicineInPrescription.findByPrescriptionId(id);
@@ -181,18 +234,27 @@ class PrescriptionViewController {
       // Get available medicines for dropdown
       const medicines = await Formulary.findAll();
 
-      // Get available tests for dropdown
-      const tests = await TestCatalog.findAll();
+      // Note: Tests are entered as free text, no catalog needed
 
       res.render("prescriptions/form", {
         title: "Edit Prescription",
         active: "prescriptions",
         prescription,
-        patient,
+        patient: patient || null,
+        medicalHistory: medicalHistory || null,
+        previousPrescriptions: previousPrescriptions || [],
         prescribedMedicines,
         advisedTests,
-        medicines,
-        tests,
+        medicines: medicines || [],
+        medicalConstants: {
+          existingConditions: EXISTING_CONDITIONS,
+          majorConditions: MAJOR_CONDITIONS,
+          allergies: COMMON_ALLERGIES,
+          surgeryTypes: SURGERY_TYPES,
+          immunizations: IMMUNIZATIONS,
+          familyConditions: FAMILY_CONDITIONS,
+        },
+        today: new Date().toISOString().split("T")[0],
       });
     } catch (error) {
       console.error("Error loading prescription form:", error);
@@ -207,62 +269,156 @@ class PrescriptionViewController {
   async create(req, res) {
     try {
       // Extract and prepare the prescription data from form
+      const diagnosisArray = Array.isArray(req.body.diagnosis)
+        ? req.body.diagnosis
+        : [];
+
       const prescriptionData = {
         patientId: parseInt(req.body.patientId),
         doctorId: req.session.user.id, // Current logged-in user is the doctor
         date: req.body.date || new Date(),
         symptoms: req.body.symptoms,
-        diagnosis: req.body.diagnosis,
-        notes: req.body.notes,
+        diagnosis: JSON.stringify(diagnosisArray),
+        clinicalNotes: req.body.clinicalNotes,
         status: req.body.status || "active",
       };
 
       // Create prescription
-      const prescription = await Prescription.create(prescriptionData);
+      const newPrescription = await Prescription.create(prescriptionData);
+
+      // Update medical history with new diagnoses
+      await this.updateMedicalHistoryFromDiagnosis(
+        prescriptionData.patientId,
+        diagnosisArray
+      );
+
+      // Update medical history with form data
+      if (
+        req.body.bloodGroup ||
+        req.body.existingConditions ||
+        req.body.allergies ||
+        req.body.majorConditions
+      ) {
+        const medicalHistoryData = {
+          patientId: prescriptionData.patientId,
+          bloodGroup: req.body.bloodGroup || null,
+          existingConditions: req.body.existingConditions
+            ? Array.isArray(req.body.existingConditions)
+              ? req.body.existingConditions
+              : [req.body.existingConditions]
+            : [],
+          allergies: req.body.allergies
+            ? Array.isArray(req.body.allergies)
+              ? req.body.allergies
+              : [req.body.allergies]
+            : [],
+          majorConditions: req.body.majorConditions
+            ? Array.isArray(req.body.majorConditions)
+              ? req.body.majorConditions
+              : [req.body.majorConditions]
+            : [],
+        };
+      }
 
       // Handle prescribed medicines
-      if (req.body.medicines && Array.isArray(req.body.medicines)) {
-        for (const medicineData of req.body.medicines) {
-          await MedicineInPrescription.create({
-            prescriptionId: prescription.id,
-            medicineId: parseInt(medicineData.id),
-            dosage: medicineData.dosage,
-            frequency: medicineData.frequency,
-            duration: medicineData.duration,
-            notes: medicineData.notes,
-          });
+      if (req.body.medicines) {
+        const medicinesArray = Object.values(req.body.medicines);
+        for (const medicineData of medicinesArray) {
+          if (medicineData.medicineId) {
+            // Get medicine details from formulary
+            const medicine = await Formulary.findById(
+              parseInt(medicineData.medicineId)
+            );
+            if (medicine) {
+              await MedicineInPrescription.create({
+                prescriptionId: newPrescription.id,
+                medicineId: parseInt(medicineData.medicineId),
+                medicineName: medicine.name,
+                dosageForm: medicine.form || "tablet",
+                strength: medicine.strength || "",
+                dosage: medicineData.dosage,
+                frequency: medicineData.frequency,
+                duration: medicineData.duration,
+                instructions: medicineData.instructions || "",
+                isCustom: false,
+              });
+            }
+          }
         }
       }
 
       // Handle advised tests
-      if (req.body.tests && Array.isArray(req.body.tests)) {
-        for (const testId of req.body.tests) {
-          await AdvisedTest.create({
-            prescriptionId: prescription.id,
-            testId: parseInt(testId),
-            notes: req.body.testNotes || "",
-          });
+      if (req.body.tests) {
+        const testsArray = Object.values(req.body.tests);
+        for (const testData of testsArray) {
+          if (testData.testName) {
+            await AdvisedTest.create({
+              prescriptionId: newPrescription.id,
+              testName: testData.testName,
+              instructions: testData.instructions || "",
+              when_to_do: testData.when_to_do || "this_visit",
+            });
+          }
         }
       }
 
       req.session.successMessage = "Prescription created successfully";
-      res.redirect(`/prescriptions/${prescription.id}`);
+
+      // Ensure we have a valid prescription with ID before redirecting
+      if (newPrescription && newPrescription.id) {
+        res.redirect(`/prescriptions/${newPrescription.id}`);
+      } else {
+        console.error("Created prescription missing ID:", newPrescription);
+        res.redirect("/prescriptions");
+      }
     } catch (error) {
       console.error("Error creating prescription:", error);
 
       // Prepare data to redisplay the form with entered values
       let patient = null;
+      let medicalHistory = null;
+      let previousPrescriptions = [];
+      let medicines = [];
+
       try {
         patient = await Patient.findById(parseInt(req.body.patientId));
+        if (patient) {
+          // Get medical history
+          medicalHistory = await MedicalHistory.findByPatientId(
+            patient.patientId
+          );
+
+          // Get last 3 prescriptions for this patient
+          previousPrescriptions = await Prescription.findByPatientId(
+            patient.patientId,
+            1,
+            3
+          );
+        }
+
+        // Get medicine list for dropdown
+        medicines = await Formulary.findAll();
       } catch (e) {
-        console.error("Error fetching patient:", e);
+        console.error("Error fetching patient data:", e);
       }
 
       res.render("prescriptions/form", {
         title: "New Prescription",
         active: "prescriptions",
         prescription: req.body,
-        patient,
+        patient: patient || null,
+        medicalHistory: medicalHistory || null,
+        previousPrescriptions: previousPrescriptions || [],
+        medicines: medicines || [],
+        medicalConstants: {
+          existingConditions: EXISTING_CONDITIONS,
+          majorConditions: MAJOR_CONDITIONS,
+          allergies: COMMON_ALLERGIES,
+          surgeryTypes: SURGERY_TYPES,
+          immunizations: IMMUNIZATIONS,
+          familyConditions: FAMILY_CONDITIONS,
+        },
+        today: new Date().toISOString().split("T")[0],
         error: error.message,
       });
     }
@@ -277,13 +433,17 @@ class PrescriptionViewController {
       }
 
       // Extract and prepare the prescription data from form
+      const diagnosisArray = Array.isArray(req.body.diagnosis)
+        ? req.body.diagnosis
+        : [];
+
       const prescriptionData = {
         patientId: parseInt(req.body.patientId),
         doctorId: parseInt(req.body.doctorId) || req.session.user.id,
         date: req.body.date,
         symptoms: req.body.symptoms,
-        diagnosis: req.body.diagnosis,
-        notes: req.body.notes,
+        diagnosis: JSON.stringify(diagnosisArray),
+        clinicalNotes: req.body.clinicalNotes,
         status: req.body.status,
       };
 
@@ -294,16 +454,29 @@ class PrescriptionViewController {
       await MedicineInPrescription.deleteByPrescriptionId(id);
 
       // Then create new ones
-      if (req.body.medicines && Array.isArray(req.body.medicines)) {
-        for (const medicineData of req.body.medicines) {
-          await MedicineInPrescription.create({
-            prescriptionId: id,
-            medicineId: parseInt(medicineData.id),
-            dosage: medicineData.dosage,
-            frequency: medicineData.frequency,
-            duration: medicineData.duration,
-            notes: medicineData.notes,
-          });
+      if (req.body.medicines) {
+        const medicinesArray = Object.values(req.body.medicines);
+        for (const medicineData of medicinesArray) {
+          if (medicineData.medicineId) {
+            // Get medicine details from formulary
+            const medicine = await Formulary.findById(
+              parseInt(medicineData.medicineId)
+            );
+            if (medicine) {
+              await MedicineInPrescription.create({
+                prescriptionId: id,
+                medicineId: parseInt(medicineData.medicineId),
+                medicineName: medicine.name,
+                dosageForm: medicine.form || "tablet",
+                strength: medicine.strength || "",
+                dosage: medicineData.dosage,
+                frequency: medicineData.frequency,
+                duration: medicineData.duration,
+                instructions: medicineData.instructions || "",
+                isCustom: false,
+              });
+            }
+          }
         }
       }
 
@@ -311,13 +484,17 @@ class PrescriptionViewController {
       await AdvisedTest.deleteByPrescriptionId(id);
 
       // Then create new ones
-      if (req.body.tests && Array.isArray(req.body.tests)) {
-        for (const testId of req.body.tests) {
-          await AdvisedTest.create({
-            prescriptionId: id,
-            testId: parseInt(testId),
-            notes: req.body.testNotes || "",
-          });
+      if (req.body.tests) {
+        const testsArray = Object.values(req.body.tests);
+        for (const testData of testsArray) {
+          if (testData.testName) {
+            await AdvisedTest.create({
+              prescriptionId: id,
+              testName: testData.testName,
+              instructions: testData.instructions || "",
+              when_to_do: testData.when_to_do || "this_visit",
+            });
+          }
         }
       }
 
@@ -328,11 +505,50 @@ class PrescriptionViewController {
 
       // Prepare data to redisplay the form with entered values
       const formData = { ...req.body, id: parseInt(req.params.id) };
+      let patient = null;
+      let medicalHistory = null;
+      let previousPrescriptions = [];
+      let medicines = [];
+
+      try {
+        patient = await Patient.findById(parseInt(req.body.patientId));
+        if (patient) {
+          // Get medical history
+          medicalHistory = await MedicalHistory.findByPatientId(
+            patient.patientId
+          );
+
+          // Get last 3 prescriptions for this patient
+          previousPrescriptions = await Prescription.findByPatientId(
+            patient.patientId,
+            1,
+            3
+          );
+        }
+
+        // Get medicine list for dropdown
+        medicines = await Formulary.findAll();
+      } catch (e) {
+        console.error("Error fetching patient data:", e);
+      }
 
       res.render("prescriptions/form", {
         title: "Edit Prescription",
         active: "prescriptions",
         prescription: formData,
+        patient: patient || null,
+        medicalHistory: medicalHistory || null,
+        previousPrescriptions: previousPrescriptions || [],
+        medicines: medicines || [],
+        medicalConstants: {
+          existingConditions: EXISTING_CONDITIONS,
+          majorConditions: MAJOR_CONDITIONS,
+          allergies: COMMON_ALLERGIES,
+          surgeryTypes: SURGERY_TYPES,
+          immunizations: IMMUNIZATIONS,
+          familyConditions: FAMILY_CONDITIONS,
+        },
+        today: new Date().toISOString().split("T")[0],
         error: error.message,
       });
     }
@@ -450,12 +666,12 @@ class PrescriptionViewController {
       }
 
       // Notes
-      if (prescription.notes) {
+      if (prescription.clinicalNotes) {
         doc
           .font("Helvetica-Bold")
           .text("Additional Notes:")
           .font("Helvetica")
-          .text(prescription.notes)
+          .text(prescription.clinicalNotes)
           .moveDown();
       }
 
@@ -500,6 +716,52 @@ class PrescriptionViewController {
       console.error("Error deleting prescription:", error);
       req.session.errorMessage = "Failed to delete prescription";
       res.redirect("/prescriptions");
+    }
+  }
+
+  // Helper method to update medical history from diagnosis
+  async updateMedicalHistoryFromDiagnosis(patientId, diagnosisArray) {
+    try {
+      if (!diagnosisArray || diagnosisArray.length === 0) return;
+
+      // Get current medical history
+      const currentHistory = await MedicalHistory.findByPatientId(patientId);
+
+      // Get current existing conditions
+      const currentConditions = currentHistory?.existingConditions || [];
+
+      // Check which diagnoses are not already in existing conditions
+      const newConditions = diagnosisArray.filter(
+        (diagnosis) =>
+          !currentConditions.some(
+            (condition) =>
+              condition.toLowerCase().includes(diagnosis.toLowerCase()) ||
+              diagnosis.toLowerCase().includes(condition.toLowerCase())
+          )
+      );
+
+      if (newConditions.length > 0) {
+        // Add new conditions to existing conditions
+        const updatedConditions = [...currentConditions, ...newConditions];
+
+        const medicalHistoryData = {
+          patientId: patientId,
+          existingConditions: updatedConditions,
+          // Preserve other existing data
+          bloodGroup: currentHistory?.bloodGroup || null,
+          allergies: currentHistory?.allergies || [],
+          majorConditions: currentHistory?.majorConditions || [],
+          surgicalHistory: currentHistory?.surgicalHistory || [],
+          immunizations: currentHistory?.immunizations || [],
+          familyHistory: currentHistory?.familyHistory || [],
+          chronicMedications: currentHistory?.chronicMedications || null,
+        };
+
+        await MedicalHistory.upsert(medicalHistoryData);
+      }
+    } catch (error) {
+      console.error("Error updating medical history from diagnosis:", error);
+      // Don't throw error to avoid breaking prescription creation
     }
   }
 }

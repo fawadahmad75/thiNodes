@@ -8,7 +8,8 @@ class Department {
 
     // Apply filters if provided
     if (filters.name) query.where("name", "like", `%${filters.name}%`);
-    if (filters.description) query.where("description", "like", `%${filters.description}%`);
+    if (filters.description)
+      query.where("description", "like", `%${filters.description}%`);
 
     // Apply pagination
     const offset = (page - 1) * limit;
@@ -48,12 +49,18 @@ class Department {
   // Get department count
   static async count(filters = {}) {
     const query = db("departments").count("id as count");
-    
+
     if (filters.name) query.where("name", "like", `%${filters.name}%`);
-    if (filters.description) query.where("description", "like", `%${filters.description}%`);
-    
+    if (filters.description)
+      query.where("description", "like", `%${filters.description}%`);
+
     const result = await query.first();
     return parseInt(result.count);
+  }
+
+  // Get department count (alias for backward compatibility)
+  static async countAll(filters = {}) {
+    return this.count(filters);
   }
 }
 

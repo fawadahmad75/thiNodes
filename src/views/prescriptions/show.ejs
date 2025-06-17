@@ -1,0 +1,704 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Prescription Details</h2>        <div>
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editPrescriptionModal">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <a href="/prescriptions/<%= prescription.id %>/pdf" class="btn btn-success" target="_blank">
+                <i class="fas fa-file-pdf"></i> Download PDF
+            </a>
+            <a href="/prescriptions" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Patient Information -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Patient Information</h5>
+                </div>
+                <div class="card-body">
+                    <% if (patient) { %>
+                        <div class="mb-2">
+                            <strong>Patient ID:</strong>
+                            <p class="mb-0"><%= patient.patientId %></p>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Name:</strong>
+                            <p class="mb-0"><%= patient.firstName %> <%= patient.lastName %></p>
+                        </div>
+                        <% if (patient.dateOfBirth) { %>
+                        <div class="mb-2">
+                            <strong>Age:</strong>
+                            <p class="mb-0"><%= new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear() %> years</p>
+                        </div>
+                        <% } %>
+                        <% if (patient.gender) { %>
+                        <div class="mb-2">
+                            <strong>Gender:</strong>
+                            <p class="mb-0"><%= patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) %></p>
+                        </div>
+                        <% } %>
+                        <% if (patient.contact) { %>
+                        <div class="mb-2">
+                            <strong>Contact:</strong>
+                            <p class="mb-0"><%= patient.contact %></p>
+                        </div>
+                        <% } %>
+                    <% } else { %>
+                        <p class="text-muted">Patient information not available</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctor Information -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-md"></i> Doctor Information</h5>
+                </div>
+                <div class="card-body">
+                    <% if (doctor) { %>
+                        <div class="mb-2">
+                            <strong>Name:</strong>
+                            <p class="mb-0">Dr. <%= doctor.name %></p>
+                        </div>
+                        <% if (doctor.specialization) { %>
+                        <div class="mb-2">
+                            <strong>Specialization:</strong>
+                            <p class="mb-0"><%= doctor.specialization %></p>
+                        </div>
+                        <% } %>
+                        <% if (doctor.regNumber) { %>
+                        <div class="mb-2">
+                            <strong>Registration No:</strong>
+                            <p class="mb-0"><%= doctor.regNumber %></p>
+                        </div>
+                        <% } %>
+                    <% } else { %>
+                        <p class="text-muted">Doctor information not available</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prescription Info -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-medical"></i> Prescription Info</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Prescription ID:</strong>
+                        <p class="mb-0">#<%= prescription.id %></p>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Date:</strong>
+                        <p class="mb-0"><%= new Date(prescription.date).toLocaleDateString() %></p>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Status:</strong>
+                        <span class="badge bg-<%= prescription.status === 'active' ? 'success' : prescription.status === 'completed' ? 'primary' : 'secondary' %>">
+                            <%= prescription.status.charAt(0).toUpperCase() + prescription.status.slice(1) %>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Symptoms & Diagnosis -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-stethoscope"></i> Clinical Information</h5>
+                </div>
+                <div class="card-body">
+                    <% if (prescription.symptoms) { %>
+                    <div class="mb-3">
+                        <strong>Symptoms:</strong>
+                        <p class="mb-0"><%= prescription.symptoms %></p>
+                    </div>
+                    <% } %>
+                    
+                    <% if (prescription.diagnosis) { %>
+                    <div class="mb-3">
+                        <strong>Diagnosis:</strong>
+                        <div class="mt-2">
+                            <% if (Array.isArray(prescription.diagnosis)) { %>
+                                <% prescription.diagnosis.forEach(diagnosis => { %>
+                                    <span class="badge bg-info me-1"><%= diagnosis %></span>
+                                <% }); %>
+                            <% } else { %>
+                                <p class="mb-0"><%= prescription.diagnosis %></p>
+                            <% } %>
+                        </div>
+                    </div>
+                    <% } %>
+
+                    <% if (prescription.clinicalNotes) { %>
+                    <div class="mb-3">
+                        <strong>Clinical Notes:</strong>
+                        <p class="mb-0"><%= prescription.clinicalNotes %></p>
+                    </div>
+                    <% } %>
+
+                    <% if (prescription.additionalInstructions) { %>
+                    <div class="mb-3">
+                        <strong>Additional Instructions:</strong>
+                        <p class="mb-0"><%= prescription.additionalInstructions %></p>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medicines -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-pills"></i> Prescribed Medicines</h5>
+                </div>
+                <div class="card-body">
+                    <% if (medicines && medicines.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Medicine</th>
+                                        <th>Dosage</th>
+                                        <th>Frequency</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% medicines.forEach(med => { %>
+                                        <tr>
+                                            <td>
+                                                <strong><%= med.medicineName || med.name || 'N/A' %></strong>
+                                                <% if (med.strength) { %>
+                                                    <br><small class="text-muted"><%= med.strength %></small>
+                                                <% } %>
+                                            </td>
+                                            <td><%= med.dosage %></td>
+                                            <td><%= med.frequency %></td>
+                                            <td><%= med.duration %></td>
+                                        </tr>                                        <% if (med.instructions) { %>
+                                            <tr>
+                                                <td colspan="4">
+                                                    <small class="text-muted"><strong>Instructions:</strong> <%= med.instructions %></small>
+                                                </td>
+                                            </tr>
+                                        <% } %>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <p class="text-muted mb-0">No medicines prescribed</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advised Tests -->
+    <% if (tests && tests.length > 0) { %>
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-flask"></i> Advised Tests</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">                            <thead>
+                                <tr>
+                                    <th>Test Name</th>
+                                    <th>Instructions</th>
+                                    <th>When to Do</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% tests.forEach(test => { %>
+                                    <tr>
+                                        <td><%= test.testName %></td>
+                                        <td><%= test.instructions || 'No specific instructions' %></td>
+                                        <td>
+                                            <% 
+                                                const whenToDo = test.when_to_do || 'this_visit';
+                                                const badgeClass = whenToDo === 'this_visit' ? 'bg-success' : 
+                                                                 whenToDo === 'next_visit' ? 'bg-warning' : 'bg-info';
+                                                const displayText = whenToDo.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                            %>
+                                            <span class="badge <%= badgeClass %>"><%= displayText %></span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">Pending</span>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <a href="/prescriptions/<%= prescription.id %>/edit" class="btn btn-warning me-2">
+                        <i class="fas fa-edit"></i> Edit Prescription
+                    </a>
+                    <a href="/prescriptions/<%= prescription.id %>/pdf" class="btn btn-success me-2" target="_blank">
+                        <i class="fas fa-file-pdf"></i> Download PDF
+                    </a>
+                    <button type="button" class="btn btn-danger me-2" onclick="confirmDelete(<%= prescription.id %>)">
+                        <i class="fas fa-trash"></i> Delete Prescription
+                    </button>
+                    <a href="/prescriptions" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> Back to Prescriptions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this prescription? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Prescription Modal -->
+<div class="modal fade" id="editPrescriptionModal" tabindex="-1" aria-labelledby="editPrescriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="editPrescriptionModalLabel">
+                    <i class="fas fa-edit"></i> Edit Prescription #<%= prescription.id %>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editPrescriptionForm" method="POST" action="/prescriptions/<%= prescription.id %>">
+                    <input type="hidden" name="_method" value="PUT">
+                    <input type="hidden" name="patientId" value="<%= prescription.patientId %>">
+                    
+                    <!-- Current Prescription Section -->
+                    <div class="card border-success mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">Prescription Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Date -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="editDate" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="editDate" name="date" 
+                                           value="<%= new Date(prescription.date).toISOString().split('T')[0] %>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="editStatus" class="form-label">Status</label>
+                                    <select class="form-select" id="editStatus" name="status">
+                                        <option value="active" <%= prescription.status === 'active' ? 'selected' : '' %>>Active</option>
+                                        <option value="completed" <%= prescription.status === 'completed' ? 'selected' : '' %>>Completed</option>
+                                        <option value="cancelled" <%= prescription.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Symptoms -->
+                            <div class="mb-3">
+                                <label for="editSymptoms" class="form-label">Symptoms</label>
+                                <textarea class="form-control" id="editSymptoms" name="symptoms" rows="3" 
+                                          placeholder="Enter patient symptoms..."><%= prescription.symptoms || '' %></textarea>
+                            </div>
+
+                            <!-- Diagnosis -->
+                            <div class="mb-3">
+                                <label class="form-label">Diagnosis</label>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="editDiagnosisInput" placeholder="Add diagnosis...">
+                                    <button class="btn btn-outline-primary" type="button" id="addEditDiagnosis">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <div id="editDiagnosisContainer" class="d-flex flex-wrap gap-1">
+                                    <% if (prescription.diagnosis) { %>
+                                        <% let diagnosisArray = []; %>
+                                        <% try { diagnosisArray = JSON.parse(prescription.diagnosis); } catch(e) { diagnosisArray = [prescription.diagnosis]; } %>
+                                        <% diagnosisArray.forEach(diagnosis => { %>
+                                            <span class="badge bg-info d-inline-flex align-items-center">
+                                                <%= diagnosis %>
+                                                <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7em;" onclick="removeEditDiagnosis(this)"></button>
+                                                <input type="hidden" name="diagnosis[]" value="<%= diagnosis %>">
+                                            </span>
+                                        <% }); %>
+                                    <% } %>
+                                </div>
+                            </div>
+
+                            <!-- Clinical Notes -->
+                            <div class="mb-3">
+                                <label for="editClinicalNotes" class="form-label">Clinical Notes</label>
+                                <textarea class="form-control" id="editClinicalNotes" name="clinicalNotes" rows="3" 
+                                          placeholder="Enter clinical notes..."><%= prescription.clinicalNotes || '' %></textarea>
+                            </div>
+
+                            <!-- Medicines Section -->
+                            <div class="mb-4">
+                                <h6>Prescribed Medicines</h6>
+                                <div class="row mb-2 text-muted small">
+                                    <div class="col-md-4"><strong>Medicine</strong></div>
+                                    <div class="col-md-2"><strong>Dosage</strong></div>
+                                    <div class="col-md-2"><strong>Frequency</strong></div>
+                                    <div class="col-md-2"><strong>Duration</strong></div>
+                                    <div class="col-md-2"><strong>Action</strong></div>
+                                </div>
+                                <div id="editMedicinesContainer">
+                                    <!-- Existing medicines will be populated here -->
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="addEditMedicine">
+                                    <i class="fas fa-plus"></i> Add Medicine
+                                </button>
+                            </div>
+
+                            <!-- Tests Advised Section -->
+                            <div class="mb-3">
+                                <h6>Tests Advised</h6>
+                                <div class="row mb-2 text-muted small">
+                                    <div class="col-md-4"><strong>Test Name</strong></div>
+                                    <div class="col-md-3"><strong>Instructions</strong></div>
+                                    <div class="col-md-3"><strong>When to Do</strong></div>
+                                    <div class="col-md-2"><strong>Action</strong></div>
+                                </div>
+                                <div id="editTestsContainer">
+                                    <!-- Existing tests will be populated here -->
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="addEditTest">
+                                    <i class="fas fa-plus"></i> Add Test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" form="editPrescriptionForm" class="btn btn-warning">
+                    <i class="fas fa-save"></i> Update Prescription
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.medicine-combobox {
+    position: relative;
+}
+
+.medicine-dropdown {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.medicine-option {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.medicine-option:hover {
+    background-color: #f8f9fa !important;
+}
+
+.medicine-option:last-child {
+    border-bottom: none !important;
+}
+
+.medicine-search {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 35px;
+}
+
+.modal-xl {
+    max-width: 90%;
+}
+</style>
+
+<script>
+function confirmDelete(prescriptionId) {
+    const form = document.getElementById('deleteForm');
+    form.action = `/prescriptions/${prescriptionId}`;
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Edit prescription modal functionality
+document.addEventListener('DOMContentLoaded', function() {
+    let editMedicineCounter = 0;
+    let editTestCounter = 0;
+    
+    const editMedicinesContainer = document.getElementById('editMedicinesContainer');
+    const addEditMedicineBtn = document.getElementById('addEditMedicine');
+    const editTestsContainer = document.getElementById('editTestsContainer');
+    const addEditTestBtn = document.getElementById('addEditTest');    // Medicine data from server
+    const allMedicines = <%- JSON.stringify(locals.allMedicines || []) %>;
+    const existingMedicines = <%- JSON.stringify(locals.medicines || []) %>;
+    const existingTests = <%- JSON.stringify(locals.tests || []) %>;
+
+    function addEditMedicineRow(medicineData = null) {
+        const row = document.createElement('div');
+        row.className = 'row mb-2 edit-medicine-row';
+        row.innerHTML = `
+            <div class="col-md-4">
+                <div class="medicine-combobox position-relative">
+                    <input type="text" class="form-control medicine-search" placeholder="Search medicine..." autocomplete="off" value="${medicineData ? medicineData.medicineName + (medicineData.strength ? ' - ' + medicineData.strength : '') : ''}">
+                    <input type="hidden" name="medicines[${editMedicineCounter}][medicineId]" class="medicine-id-input" value="${medicineData ? medicineData.medicineId : ''}" required>                    <div class="medicine-dropdown position-absolute w-100 bg-white border border-top-0 d-none" style="max-height: 200px; overflow-y: auto; z-index: 1000;">
+                        ${allMedicines.map(medicine => `
+                            <div class="medicine-option p-2 border-bottom" data-id="${medicine.id}" data-name="${medicine.name}" data-strength="${medicine.strength || ''}">
+                                <strong>${medicine.name}</strong>
+                                ${medicine.strength ? `<span class="text-muted">- ${medicine.strength}</span>` : ''}
+                                ${medicine.form ? `<small class="text-info d-block">${medicine.form}</small>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="medicines[${editMedicineCounter}][dosage]" placeholder="Dosage" value="${medicineData ? medicineData.dosage : ''}" required>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="medicines[${editMedicineCounter}][frequency]" placeholder="Frequency" value="${medicineData ? medicineData.frequency : ''}" required>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="medicines[${editMedicineCounter}][duration]" placeholder="Duration" value="${medicineData ? medicineData.duration : ''}" required>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger btn-sm remove-edit-medicine">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        editMedicinesContainer.appendChild(row);
+        setupEditMedicineCombobox(row);
+        editMedicineCounter++;
+    }
+
+    function addEditTestRow(testData = null) {
+        const row = document.createElement('div');
+        row.className = 'row mb-2 edit-test-row';
+        row.innerHTML = `
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="tests[${editTestCounter}][testName]" placeholder="Test Name" value="${testData ? testData.testName : ''}" required>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" name="tests[${editTestCounter}][instructions]" placeholder="Instructions" value="${testData ? testData.instructions || '' : ''}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="tests[${editTestCounter}][when_to_do]">
+                    <option value="this_visit" ${testData && testData.when_to_do === 'this_visit' ? 'selected' : ''}>This Visit</option>
+                    <option value="next_visit" ${testData && testData.when_to_do === 'next_visit' ? 'selected' : ''}>Next Visit</option>
+                    <option value="as_needed" ${testData && testData.when_to_do === 'as_needed' ? 'selected' : ''}>As Needed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger btn-sm remove-edit-test">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        editTestsContainer.appendChild(row);
+        editTestCounter++;
+    }
+
+    function setupEditMedicineCombobox(row) {
+        const searchInput = row.querySelector('.medicine-search');
+        const hiddenInput = row.querySelector('.medicine-id-input');
+        const dropdown = row.querySelector('.medicine-dropdown');
+        const options = row.querySelectorAll('.medicine-option');
+
+        searchInput.addEventListener('focus', function() {
+            dropdown.classList.remove('d-none');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!row.contains(e.target)) {
+                dropdown.classList.add('d-none');
+            }
+        });
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let hasVisibleOptions = false;
+
+            options.forEach(option => {
+                const medicineName = option.getAttribute('data-name').toLowerCase();
+                const medicineStrength = option.getAttribute('data-strength')?.toLowerCase() || '';
+                
+                if (medicineName.includes(searchTerm) || medicineStrength.includes(searchTerm)) {
+                    option.classList.remove('d-none');
+                    hasVisibleOptions = true;
+                } else {
+                    option.classList.add('d-none');
+                }
+            });
+
+            if (hasVisibleOptions && searchTerm.length > 0) {
+                dropdown.classList.remove('d-none');
+            } else if (searchTerm.length === 0) {
+                dropdown.classList.remove('d-none');
+                options.forEach(option => option.classList.remove('d-none'));
+            } else {
+                dropdown.classList.add('d-none');
+            }
+
+            hiddenInput.value = '';
+        });
+
+        options.forEach(option => {
+            option.addEventListener('click', function() {
+                const medicineId = this.getAttribute('data-id');
+                const medicineName = this.getAttribute('data-name');
+                const medicineStrength = this.getAttribute('data-strength');
+                
+                searchInput.value = medicineName + (medicineStrength ? ' - ' + medicineStrength : '');
+                hiddenInput.value = medicineId;
+                dropdown.classList.add('d-none');
+            });
+
+            option.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#f8f9fa';
+            });
+
+            option.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+            });
+        });
+    }
+
+    // Event listeners
+    if (addEditMedicineBtn) {
+        addEditMedicineBtn.addEventListener('click', () => addEditMedicineRow());
+    }
+
+    if (addEditTestBtn) {
+        addEditTestBtn.addEventListener('click', () => addEditTestRow());
+    }
+
+    // Remove medicine/test functionality
+    editMedicinesContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-edit-medicine') || e.target.parentElement.classList.contains('remove-edit-medicine')) {
+            e.target.closest('.edit-medicine-row').remove();
+        }
+    });
+
+    editTestsContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-edit-test') || e.target.parentElement.classList.contains('remove-edit-test')) {
+            e.target.closest('.edit-test-row').remove();
+        }
+    });
+
+    // Diagnosis management for edit modal
+    const addEditDiagnosisBtn = document.getElementById('addEditDiagnosis');
+    const editDiagnosisInput = document.getElementById('editDiagnosisInput');
+    const editDiagnosisContainer = document.getElementById('editDiagnosisContainer');
+
+    if (addEditDiagnosisBtn && editDiagnosisInput && editDiagnosisContainer) {
+        addEditDiagnosisBtn.addEventListener('click', function() {
+            const value = editDiagnosisInput.value.trim();
+            if (value && !isDuplicateEditDiagnosis(value)) {
+                addEditDiagnosisBadge(value);
+                editDiagnosisInput.value = '';
+            }
+        });
+
+        editDiagnosisInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addEditDiagnosisBtn.click();
+            }
+        });
+    }
+
+    function isDuplicateEditDiagnosis(value) {
+        const existing = editDiagnosisContainer.querySelectorAll('input[name="diagnosis[]"]');
+        return Array.from(existing).some(input => input.value === value);
+    }
+
+    function addEditDiagnosisBadge(value) {
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-info d-inline-flex align-items-center';
+        badge.innerHTML = `
+            ${value}
+            <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.7em;" onclick="removeEditDiagnosis(this)"></button>
+            <input type="hidden" name="diagnosis[]" value="${value}">
+        `;
+        editDiagnosisContainer.appendChild(badge);
+    }
+
+    window.removeEditDiagnosis = function(button) {
+        button.parentElement.remove();
+    };
+
+    // Load existing data when modal opens
+    document.getElementById('editPrescriptionModal').addEventListener('shown.bs.modal', function() {
+        // Clear existing rows
+        editMedicinesContainer.innerHTML = '';
+        editTestsContainer.innerHTML = '';
+        editMedicineCounter = 0;
+        editTestCounter = 0;
+
+        // Add existing medicines
+        if (existingMedicines && existingMedicines.length > 0) {
+            existingMedicines.forEach(medicine => addEditMedicineRow(medicine));
+        } else {
+            addEditMedicineRow(); // Add empty row
+        }
+
+        // Add existing tests
+        if (existingTests && existingTests.length > 0) {
+            existingTests.forEach(test => addEditTestRow(test));
+        } else {
+            addEditTestRow(); // Add empty row
+        }
+    });
+});
+</script>

@@ -20,6 +20,21 @@ class User {
     return query;
   }
 
+  // Count users with optional filters
+  static async countAll(filters = {}) {
+    const query = db("users").count("* as count");
+
+    // Apply filters if provided
+    if (filters.role) query.where({ role: filters.role });
+    if (filters.name) query.where("name", "like", `%${filters.name}%`);
+    if (filters.username) query.where({ username: filters.username });
+    if (filters.specialization)
+      query.where("specialization", "like", `%${filters.specialization}%`);
+
+    const result = await query.first();
+    return parseInt(result.count);
+  }
+
   // Find user by ID
   static async findById(id) {
     return db("users").where({ id }).first();

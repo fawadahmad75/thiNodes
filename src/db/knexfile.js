@@ -18,10 +18,16 @@ export default {
       database: process.env.DB_NAME,
       port: process.env.DB_PORT,
     },
-    // Connection pooling settings:
+    // Enhanced connection pooling for scalability
     pool: {
-      min: 2, // Minimum number of connections in pool
-      max: 10, // Maximum number of connections in pool
+      min: 5, // Minimum number of connections in pool
+      max: 25, // Maximum number of connections in pool
+      acquireTimeoutMillis: 60000, // 60 seconds
+      idleTimeoutMillis: 600000, // 10 minutes
+      createTimeoutMillis: 30000, // 30 seconds
+      destroyTimeoutMillis: 5000, // 5 seconds
+      reapIntervalMillis: 1000, // 1 second
+      createRetryIntervalMillis: 200, // 200ms
     },
     migrations: { directory: "./migrations/v1", tableName: "knex_migrations" },
     seeds: { directory: path.join(__dirname, "seeds") },
@@ -37,8 +43,14 @@ export default {
       ssl: { rejectUnauthorized: false },
     },
     pool: {
-      min: 4,
-      max: 20,
+      min: 10,
+      max: 50, // Higher for production
+      acquireTimeoutMillis: 60000,
+      idleTimeoutMillis: 600000,
+      createTimeoutMillis: 30000,
+      destroyTimeoutMillis: 5000,
+      reapIntervalMillis: 1000,
+      createRetryIntervalMillis: 200,
     },
     migrations: { directory: "./migrations", tableName: "knex_migrations" },
     seeds: { directory: path.join(__dirname, "seeds") },

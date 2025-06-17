@@ -1,0 +1,161 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><%= medicine.name %> - Medicine Details</h2>
+        <div>
+            <a href="/formulary/<%= medicine.id %>/edit" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="/formulary" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-pills"></i> Medicine Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Name:</strong>
+                            <p class="mb-0"><%= medicine.name %></p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Generic Name:</strong>
+                            <p class="mb-0"><%= medicine.genericName || 'N/A' %></p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Strength:</strong>
+                            <p class="mb-0"><%= medicine.strength %></p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Category:</strong>
+                            <span class="badge bg-info"><%= medicine.category %></span>
+                        </div>
+                    </div>
+
+                    <% if (medicine.dosageGuidelines) { %>
+                    <div class="mb-3">
+                        <strong>Dosage Guidelines:</strong>
+                        <p class="mb-0"><%= medicine.dosageGuidelines %></p>
+                    </div>
+                    <% } %>
+
+                    <% if (medicine.frequencyOptions && medicine.frequencyOptions.length > 0) { %>
+                    <div class="mb-3">
+                        <strong>Frequency Options:</strong>
+                        <div class="mt-2">
+                            <% medicine.frequencyOptions.forEach(frequency => { %>
+                                <span class="badge bg-secondary me-1"><%= frequency %></span>
+                            <% }); %>
+                        </div>
+                    </div>
+                    <% } %>
+
+                    <% if (medicine.sideEffects && medicine.sideEffects.length > 0) { %>
+                    <div class="mb-3">
+                        <strong>Side Effects:</strong>
+                        <div class="mt-2">
+                            <% medicine.sideEffects.forEach(effect => { %>
+                                <span class="badge bg-warning text-dark me-1"><%= effect %></span>
+                            <% }); %>
+                        </div>
+                    </div>
+                    <% } %>
+
+                    <% if (medicine.drugInteractions && medicine.drugInteractions.length > 0) { %>
+                    <div class="mb-3">
+                        <strong>Drug Interactions:</strong>
+                        <div class="mt-2">
+                            <% medicine.drugInteractions.forEach(interaction => { %>
+                                <span class="badge bg-danger me-1"><%= interaction %></span>
+                            <% }); %>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Record Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Medicine ID:</strong>
+                        <p class="mb-0">#<%= medicine.id %></p>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <strong>Created:</strong>
+                        <p class="mb-0"><%= new Date(medicine.createdAt).toLocaleDateString() %></p>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <strong>Last Updated:</strong>
+                        <p class="mb-0"><%= new Date(medicine.updatedAt).toLocaleDateString() %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-3">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-cogs"></i> Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/formulary/<%= medicine.id %>/edit" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> Edit Medicine
+                        </a>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<%= medicine.id %>)">
+                            <i class="fas fa-trash"></i> Delete Medicine
+                        </button>
+                        <a href="/formulary/new" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Add New Medicine
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete "<%= medicine.name %>"? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(medicineId) {
+    const form = document.getElementById('deleteForm');
+    form.action = `/formulary/${medicineId}`;
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+</script>

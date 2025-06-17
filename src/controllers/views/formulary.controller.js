@@ -364,6 +364,53 @@ class FormularyViewController {
       });
     }
   }
+
+  // Show individual medicine details
+  async show(req, res) {
+    try {
+      // Parse ID to ensure it's an integer
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.render("errors/404", {
+          title: "Invalid ID",
+          message: "Invalid medicine ID format",
+        });
+      }
+
+      const medicine = await Formulary.findById(id);
+      if (!medicine) {
+        return res.render("errors/404", {
+          title: "Not Found",
+          message: "Medicine not found",
+        });
+      }
+
+      // Ensure array fields are properly parsed for display
+      for (const field of Formulary.arrayFields) {
+        try {
+          if (typeof medicine[field] === "string") {
+            medicine[field] = JSON.parse(medicine[field] || "[]");
+          } else if (!Array.isArray(medicine[field])) {
+            medicine[field] = [];
+          }
+        } catch (e) {
+          medicine[field] = [];
+        }
+      }
+
+      res.render("formulary/show", {
+        title: `${medicine.name} - Medicine Details`,
+        active: "formulary",
+        medicine,
+      });
+    } catch (error) {
+      console.error("Error in show medicine:", error);
+      res.render("errors/error", {
+        title: "Error",
+        message: "Failed to load medicine details",
+      });
+    }
+  }
 }
 
 export default FormularyViewController;

@@ -8,6 +8,7 @@ import TestResult from "./TestResult.js";
 import PrintSettings from "./PrintSettings.js";
 import HospitalSettings from "./HospitalSettings.js";
 import Department from "./Department.js";
+import MedicalHistory from "./MedicalHistory.js";
 
 export {
   User,
@@ -20,4 +21,5 @@ export {
   PrintSettings,
   HospitalSettings,
   Department,
+  MedicalHistory,
 };

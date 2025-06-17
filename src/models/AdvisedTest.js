@@ -17,9 +17,10 @@ class AdvisedTest {
 
   // Create new advised test
   static async create(testData) {
-    const [id] = await db("advised_tests_in_prescription")
+    const [result] = await db("advised_tests_in_prescription")
       .insert(testData)
       .returning("id");
+    const id = result.id || result;
     return this.findById(id);
   }
 

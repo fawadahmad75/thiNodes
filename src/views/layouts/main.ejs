@@ -24,6 +24,13 @@
                 <div class="col-md-2 bg-light sidebar">
                     <div class="position-sticky pt-3">
                         <ul class="nav flex-column">
+                            <% if (locals.user.departments && locals.user.departments.length > 1) { %>
+                            <li class="nav-item">
+                                <a class="nav-link <%= active === 'department-select' ? 'active' : '' %>" href="/departments/select">
+                                    <i class="fas fa-building"></i> Select Department
+                                </a>
+                            </li>
+                            <% } %>
                             <li class="nav-item">
                                 <a class="nav-link <%= active === 'dashboard' ? 'active' : '' %>" href="/dashboard">
                                     <i class="fas fa-home"></i> Dashboard

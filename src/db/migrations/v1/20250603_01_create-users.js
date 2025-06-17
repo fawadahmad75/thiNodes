@@ -5,10 +5,7 @@ export function up(knex) {
     table.string("password").notNullable();
     table.string("name", 100).notNullable();
     table.string("email", 100).notNullable();
-    table
-      .enum("role", ["doctor", "admin", "pharmacist"])
-      .notNullable()
-      .defaultTo("doctor");
+    table.notNullable().defaultTo("doctor");
     table.specificType("departments", "integer[]").defaultTo("{}"); // Array of department IDs
     table.string("specialization", 100);
     table.string("licenseNumber", 50);
